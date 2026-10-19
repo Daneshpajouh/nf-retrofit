@@ -47,3 +47,26 @@ def test_strict_mode_lists_extra_alleles_at_true_and_new_sites(data_dir):
 def test_default_result_has_no_extra_allele_list(data_dir):
     result = compare_vcf(data_dir / "calls_strict_extra.vcf", data_dir / "truth_three.vcf")
     assert "extra_alleles" not in result
+
+
+HEADER = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+
+
+def test_lowercase_alleles_match_the_truth_set(tmp_path, data_dir):
+    # the VCF spec makes REF and ALT bases case-insensitive
+    calls = tmp_path / "lower.vcf"
+    calls.write_text(
+        HEADER + "1\t100\t.\tcct\tc\t.\tPASS\t.\n1\t200\t.\ta\tg,<*>\t.\tPASS\t.\n"
+        "1\t300\t.\tT\tc\t.\tPASS\t.\n"
+    )
+    result = compare_vcf(calls, data_dir / "truth_three.vcf")
+    assert result["found"] == 3
+    assert result["missed"] == []
+
+
+def test_blank_line_at_the_end_of_a_hand_edited_vcf_is_skipped(tmp_path, data_dir):
+    truth = tmp_path / "truth.vcf"
+    truth.write_text((data_dir / "truth_three.vcf").read_text() + "\n")
+    result = compare_vcf(data_dir / "calls_strict_pass.vcf", truth)
+    assert result["truth"] == 3
+    assert result["missed"] == []

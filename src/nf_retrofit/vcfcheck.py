@@ -28,7 +28,7 @@ def read_variants(path: str | Path, pass_only: bool = True) -> set[tuple[str, in
     variants = set()
     with _open(Path(path)) as handle:
         for line in handle:
-            if line.startswith("#"):
+            if line.startswith("#") or not line.strip():
                 continue
             chrom, pos, _id, ref, alts, _qual, filt = line.split("\t")[:7]
             if pass_only and filt not in ("PASS", "."):
@@ -36,7 +36,9 @@ def read_variants(path: str | Path, pass_only: bool = True) -> set[tuple[str, in
             for alt in alts.split(","):
                 if alt in ("*", "<*>", "<NON_REF>"):
                     continue
-                variants.add((chrom, *minimal(int(pos), ref, alt)))
+                # bases are case-insensitive in VCF; symbolic alleles such as <DEL> are not
+                alt = alt if alt.startswith("<") else alt.upper()
+                variants.add((chrom, *minimal(int(pos), ref.upper(), alt)))
     return variants
 
 
