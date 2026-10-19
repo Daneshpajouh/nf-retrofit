@@ -30,7 +30,7 @@ make unit
 ```
 
 ```
-22 passed in 1.18s
+31 passed in 1.14s
 ```
 
 ```
@@ -42,6 +42,8 @@ make nf-test        # needs Docker, Nextflow and nf-test
   Test '-stub-run falls through to the real scripts (no stub blocks)' PASSED (13.1s)
 SUCCESS: Executed 2 tests in 28.8s
 ```
+
+`make nf-test` runs the rnaseq-nf tests on this Mac. The CalliNGS-NF test needs Nextflow 22.04.5, so it runs in GitHub Actions, where the pipeline ran end to end on its bundled data and produced its VCF. It does not run on current Nextflow (see Findings below).
 
 A logged run of rnaseq-nf on the known-answer data:
 
@@ -58,11 +60,11 @@ OK: 4 tasks, 0 failed, 25.3 s
 
 ## Findings so far
 
-rnaseq-nf: Salmon's output is never published to `--outdir`; a relative `--transcriptome` path fails; CI checks only the exit status; no stub blocks; the image is amd64 only. CalliNGS-NF: it does not run on Nextflow 26.10.2 (top-level statements, duplicate input names, the removed `phase` operator), and the docker profile's user mapping is set outside the `docker` scope and ignored. Details and line numbers in `docs/findings/`.
+rnaseq-nf: Salmon's output is never published to `--outdir`; a relative `--transcriptome` path fails; CI checks only the exit status; no stub blocks; the image is amd64 only. CalliNGS-NF: it does not run on Nextflow 26.10.2 (top-level statements, duplicate input names, the removed `phase` operator), and the docker profile's user mapping is set outside the `docker` scope and ignored. It does run end to end on Nextflow 22.04.5: in GitHub Actions, `tests/nf-test/callings-nf` runs the pipeline on its bundled data, and the run finishes and produces its VCF. Details and line numbers in `docs/findings/`.
 
 ## Known limits
 
-- `check-vcf` matches on site and allele only: it ignores genotype, and extra calls are counted but do not fail the check.
+- `check-vcf` matches on site and allele only: it never compares genotype. By default, extra calls are counted but do not fail the check; `--fail-on-extra` (strict mode) fails it when any PASS call has an allele the truth VCF lacks and lists those alleles. Genotype is still not compared in strict mode.
 - The published image is useful only for the Python CLI: it has no Docker client and none of `conf/`, `tests/` or `scripts/`.
 
 ## Layout

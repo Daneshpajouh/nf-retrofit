@@ -44,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("check-vcf", help="compare called SNVs with a truth VCF")
     p.add_argument("calls", type=Path)
     p.add_argument("truth", type=Path)
+    p.add_argument("--fail-on-extra", action="store_true",
+                   help="also fail when a PASS call has an allele the truth VCF lacks")
 
     p = sub.add_parser("lint-report", help="markdown summary of `nextflow lint` output")
     p.add_argument("lint_output", type=Path)
@@ -79,9 +81,9 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(simulate_germline(args.reference, args.out, args.snvs_per_contig, depth=args.depth, seed=args.seed)))
         return 0
     if args.command == "check-vcf":
-        result = compare_vcf(args.calls, args.truth)
+        result = compare_vcf(args.calls, args.truth, strict=args.fail_on_extra)
         print(json.dumps(result, indent=2))
-        return 0 if not result["missed"] else 1
+        return 1 if result["missed"] or result.get("extra_alleles") else 0
     if args.command == "lint-report":
         try:
             report = lint_file_to_markdown(args.lint_output, args.title, args.exit_code)

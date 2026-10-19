@@ -1,0 +1,6 @@
+##fileformat=VCFv4.2
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	100	.	CCTC	CC	50	PASS	.
+1	200	.	A	G,<*>	40	PASS	.
+1	300	.	T	C	45	PASS	.
+1	400	.	G	A	3	LowQual	.

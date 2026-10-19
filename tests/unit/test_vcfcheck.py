@@ -23,3 +23,23 @@ def test_padding_and_symbolic_alleles_do_not_hide_a_match(data_dir):
     assert result["found"] == 2
     assert result["missed"] == ["1:300 T>C"]
     assert result["extra"] == 0
+
+
+def test_strict_mode_passes_when_every_pass_allele_is_in_the_truth_set(data_dir):
+    # the LowQual call at 1:400 is not in the truth set, but only PASS calls are compared
+    result = compare_vcf(data_dir / "calls_strict_pass.vcf", data_dir / "truth_three.vcf", strict=True)
+    assert result["found"] == 3
+    assert result["missed"] == []
+    assert result["extra_alleles"] == []
+
+
+def test_strict_mode_lists_extra_alleles_at_true_and_new_sites(data_dir):
+    result = compare_vcf(data_dir / "calls_strict_extra.vcf", data_dir / "truth_three.vcf", strict=True)
+    assert result["found"] == 3
+    assert result["extra"] == 2
+    assert result["extra_alleles"] == ["1:200 A>T", "2:50 C>G"]
+
+
+def test_default_result_has_no_extra_allele_list(data_dir):
+    result = compare_vcf(data_dir / "calls_strict_extra.vcf", data_dir / "truth_three.vcf")
+    assert "extra_alleles" not in result

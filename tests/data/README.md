@@ -11,6 +11,8 @@ inserts around 250) drawn in those numbers. `expected.json` holds the counts and
 | File | What it exercises |
 |---|---|
 | `calls_padded.vcf`, `truth_three.vcf` | a deletion written with an extra trailing base, a symbolic `<*>` allele, a non-PASS call |
+| `calls_strict_pass.vcf` | every truth allele found, plus a non-PASS call missing from the truth set: passes `check-vcf --fail-on-extra` |
+| `calls_strict_extra.vcf` | every truth allele found, plus an extra allele at a true site (`1:200 A>G,T`) and a call at a new site: fails `check-vcf --fail-on-extra`, passes the default check |
 | `quant_close.sf`, `expected_counts.json` | Salmon counts 0.4% and 0.5% off the expected values |
 | `lint_two_errors.txt` | two entries cut from the real `nextflow lint` output for CalliNGS-NF |
 | `trace_one_failed.tsv` | a Nextflow trace with one COMPLETED task and one FAILED with exit 127 |

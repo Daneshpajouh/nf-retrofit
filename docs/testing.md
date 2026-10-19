@@ -4,7 +4,7 @@ Four layers, from seconds to minutes. Numbers are from runs on 2026-10-19 on an 
 
 ## 1. Unit tests (pytest, no Nextflow)
 
-`make unit`: 22 tests in 1.18 s. They cover the kit's own code against hand-checked fixtures in `tests/data`: allele trimming before VCF comparison (`CCTC>CC` is `CCT>C`), Salmon counts within and outside a 2% tolerance, parsing real `nextflow lint` output, trace summaries with a failed task, glob and `{1,2}` expansion in the manifest, and the read simulators (seeded output is identical between runs, truth alleles match the reference, no 31-mer is shared between synthetic transcripts).
+`make unit`: 31 tests in 1.14 s. They cover the kit's own code against hand-checked fixtures in `tests/data`: allele trimming before VCF comparison (`CCTC>CC` is `CCT>C`), `check-vcf` exit status with and without `--fail-on-extra`, Salmon counts within and outside a 2% tolerance, parsing real `nextflow lint` output, trace summaries with a failed task, glob and `{1,2}` expansion in the manifest, and the read simulators (seeded output is identical between runs, truth alleles match the reference, no 31-mer is shared between synthetic transcripts).
 
 ## 2. Static checks (`nextflow lint`)
 
@@ -25,10 +25,12 @@ Salmon returned 400, 800, 1,600 and 1,200 reads, the drawn numbers exactly, with
 
 For variant callers, `nf-retrofit germline` writes paired reads from any reference with a known set of heterozygous and homozygous SNVs and a truth VCF, and `nf-retrofit check-vcf calls.vcf truth.vcf` compares the PASS calls after trimming padded alleles. Trimming does not left-align an indel in a repeat, so normalise both VCFs first with `bcftools norm -f ref.fa -m -both`.
 
+By default `check-vcf` fails only when a truth allele is missed; extra calls are counted (`extra`) but pass. Strict mode, `check-vcf --fail-on-extra calls.vcf truth.vcf`, also fails when any PASS call carries an allele the truth VCF lacks, whether at a true site (`1:200 A>G,T` against a truth of `A>G`) or at a new one, and lists each one under `extra_alleles`. Both modes compare only calls whose FILTER is `PASS` or `.`, and skip the `*`, `<*>` and `<NON_REF>` alleles. Neither compares genotype: a heterozygous call of a homozygous truth variant still matches.
+
 ## 4. Whole-pipeline runs with logs
 
 `scripts/run_with_logs.sh` (see `docs/logging.md`) runs a pipeline unchanged with `conf/test.config`: at most one CPU and 2 GB per task, `pipefail` in every task shell, and `--platform linux/amd64` for images that have no arm64 build.
 
 ## What did not run here
 
-CalliNGS-NF did not run on this Mac. Nextflow 26.10.2 rejects it (`phase` operator, top-level statements), and the Homebrew launcher would not pin an older Nextflow. The `callings-nf` CI step runs `tests/nf-test/callings-nf/bundled_data.nf.test` with the official launcher, Java 17 and `NXF_VER=22.04.5`, because the `phase` operator in `modules.nf` already fails on 22.10.8, 23.10.1 and 24.04.4 (checked in containers with Java 17), and nf-test 0.9.5 runs on 22.04.5. Its result is in CI, not here.
+CalliNGS-NF did not run on this Mac. Nextflow 26.10.2 rejects it (`phase` operator, top-level statements), and the Homebrew launcher would not pin an older Nextflow. The `callings-nf` CI step runs `tests/nf-test/callings-nf/bundled_data.nf.test` with the official launcher, Java 17 and `NXF_VER=22.04.5`, because the `phase` operator in `modules.nf` already fails on 22.10.8, 23.10.1 and 24.04.4 (checked in containers with Java 17), and nf-test 0.9.5 runs on 22.04.5. In that GitHub Actions step the pipeline ran end to end on its bundled data and produced its VCF, and the test passed. It still does not run on current Nextflow.

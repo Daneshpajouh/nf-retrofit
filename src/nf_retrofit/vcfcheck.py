@@ -40,13 +40,25 @@ def read_variants(path: str | Path, pass_only: bool = True) -> set[tuple[str, in
     return variants
 
 
-def compare_vcf(calls: str | Path, truth: str | Path) -> dict[str, object]:
+def _label(variants: set[tuple[str, int, str, str]]) -> list[str]:
+    return sorted(f"{c}:{p} {r}>{a}" for c, p, r, a in variants)
+
+
+def compare_vcf(calls: str | Path, truth: str | Path, strict: bool = False) -> dict[str, object]:
+    """Site and allele match of PASS calls; genotype is never compared.
+
+    With `strict`, the result also lists each called allele the truth set lacks
+    (`extra_alleles`), so a caller can fail on it.
+    """
     called, expected = read_variants(calls), read_variants(truth)
     found = called & expected
-    return {
+    result = {
         "truth": len(expected),
         "called": len(called),
         "found": len(found),
-        "missed": sorted(f"{c}:{p} {r}>{a}" for c, p, r, a in expected - called),
+        "missed": _label(expected - called),
         "extra": len(called - expected),
     }
+    if strict:
+        result["extra_alleles"] = _label(called - expected)
+    return result
