@@ -13,9 +13,9 @@ RUN curl -fsSL https://get.nextflow.io | bash \
     && curl -fsSL https://get.nf-test.com | bash -s 0.9.5 \
     && mv nf-test /usr/local/bin/
 
-WORKDIR /opt/nf-legacy-testkit
+WORKDIR /opt/nf-retrofit
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
 RUN python3 -m pip install --no-cache-dir --break-system-packages .
 
-ENTRYPOINT ["nf-legacy-testkit"]
+ENTRYPOINT ["nf-retrofit"]

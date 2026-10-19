@@ -14,7 +14,7 @@ import hashlib
 import json
 import platform
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -62,7 +62,7 @@ def write_manifest(
     out: Path, inputs: list[Path], params: dict[str, str], pipeline_dir: Path, container: str | None
 ) -> dict[str, object]:
     manifest = {
-        "started_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "started_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "host": {"system": platform.system(), "machine": platform.machine()},
         "nextflow": tool_version(["nextflow", "-version"]),
         "pipeline_dir": str(pipeline_dir),
@@ -113,7 +113,7 @@ def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: P
         for name, e in sorted(processes.items())
     ]
     started = json.loads(manifest.read_text(encoding="utf-8"))["started_utc"]
-    finished = datetime.now(timezone.utc)
+    finished = datetime.now(UTC)
     outputs = sorted(p for p in out_dir.rglob("*") if p.is_file()) if out_dir.exists() else []
     summary = {
         "status": "OK" if exit_code == 0 and not failed else "FAILED",

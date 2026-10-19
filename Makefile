@@ -14,5 +14,5 @@ nf-test:
 lint-reports:
 	for p in rnaseq-nf callings-nf; do \
 	  nextflow lint examples/$$p > docs/lint/$$p.txt 2>&1 || true; \
-	  PYTHONPATH=src $(PYTHON) -m nf_legacy_testkit lint-report docs/lint/$$p.txt --title "nextflow lint: $$p" > docs/lint/$$p.md; \
+	  PYTHONPATH=src $(PYTHON) -m nf_retrofit lint-report docs/lint/$$p.txt --title "nextflow lint: $$p" > docs/lint/$$p.md; \
 	done

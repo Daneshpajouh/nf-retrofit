@@ -1,6 +1,6 @@
 import pytest
 
-from nf_legacy_testkit.vcfcheck import compare_vcf, minimal
+from nf_retrofit.vcfcheck import compare_vcf, minimal
 
 
 @pytest.mark.parametrize(

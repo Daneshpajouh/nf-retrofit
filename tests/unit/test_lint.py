@@ -1,4 +1,4 @@
-from nf_legacy_testkit.lint import parse_lint, to_markdown
+from nf_retrofit.lint import parse_lint, to_markdown
 
 
 def test_reads_level_location_and_message_from_real_lint_output(data_dir):

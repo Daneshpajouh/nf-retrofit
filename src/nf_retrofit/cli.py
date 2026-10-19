@@ -20,7 +20,7 @@ def _named_counts(arg: str) -> dict[str, int]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="nf-legacy-testkit")
+    parser = argparse.ArgumentParser(prog="nf-retrofit")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
 

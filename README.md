@@ -1,4 +1,4 @@
-# nf-legacy-testkit
+# nf-retrofit
 
 Tests, profiles, known-answer data and run logging for an existing Nextflow pipeline that has none, added from outside: the pipeline is a pinned git submodule and is never edited. Everything this kit adds lives in its own files.
 
@@ -14,7 +14,7 @@ Two published pipelines are the worked examples:
 - `conf/test.config` and `conf/slurm.config`: overlays applied with `-c`. The test overlay runs one CPU and 2 GB per task, turns on `pipefail` in task shells and pulls amd64 images on arm64 hosts. The Slurm overlay turns queue, account, wall time and resource caps into parameters.
 - `tests/nf-test/`: pipeline tests with known answers, plus a `-stub-run` test.
 - `docs/lint/`: what `nextflow lint` 26.10.2 rejects in each pipeline, raw and counted.
-- `nf-legacy-testkit`, a small Python package: synthetic transcriptomes with known read counts, reads from any reference with known SNVs, checks of Salmon output and of VCFs against a truth set, lint summaries, and the run manifest and summary.
+- `nf-retrofit`, a small Python package: synthetic transcriptomes with known read counts, reads from any reference with known SNVs, checks of Salmon output and of VCFs against a truth set, lint summaries, and the run manifest and summary.
 - `scripts/run_with_logs.sh`: a manifest before the run, logs and trace during, a summary after (`docs/logging.md`).
 - `docs/findings/`: one short report per pipeline, written to be offered to its maintainers.
 
@@ -22,7 +22,7 @@ Two published pipelines are the worked examples:
 
 ```
 git clone --recurse-submodules <this repository>
-cd nf-legacy-testkit
+cd nf-retrofit
 make unit
 ```
 
@@ -64,7 +64,7 @@ conf/                 test and Slurm overlays
 docs/                 testing.md, logging.md, findings/, lint/
 examples/             the two pipelines, as pinned submodules
 scripts/              run_with_logs.sh
-src/nf_legacy_testkit simulators, checks, lint summary, run log
+src/nf_retrofit simulators, checks, lint summary, run log
 tests/unit            pytest
 tests/nf-test         nf-test pipeline tests
 tests/data            fixtures and the rnaseq-nf known-answer set

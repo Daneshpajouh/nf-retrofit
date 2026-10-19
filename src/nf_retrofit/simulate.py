@@ -10,7 +10,7 @@ from __future__ import annotations
 import gzip
 import json
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 BASES = "ACGT"

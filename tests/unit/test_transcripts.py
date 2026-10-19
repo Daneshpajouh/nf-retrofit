@@ -1,7 +1,7 @@
 import gzip
 import json
 
-from nf_legacy_testkit.transcripts import compare_quant, simulate_transcripts
+from nf_retrofit.transcripts import compare_quant, simulate_transcripts
 
 
 def test_quant_within_two_percent_passes_and_a_swap_fails(data_dir):

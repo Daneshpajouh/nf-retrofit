@@ -1,7 +1,13 @@
 import gzip
 import random
 
-from nf_legacy_testkit.simulate import Variant, apply, pick_variants, read_fasta, simulate_germline
+from nf_retrofit.simulate import (
+    Variant,
+    apply,
+    pick_variants,
+    read_fasta,
+    simulate_germline,
+)
 
 
 def _toy_reference(tmp_path, length=12_000):
@@ -28,7 +34,7 @@ def test_same_seed_gives_identical_reads(tmp_path):
     ref = _toy_reference(tmp_path)
     simulate_germline(ref, tmp_path / "a", snvs_per_contig=4, depth=3, seed=11)
     simulate_germline(ref, tmp_path / "b", snvs_per_contig=4, depth=3, seed=11)
-    read = lambda p: gzip.open(p, "rt").read()  # noqa: E731
+    read = lambda p: gzip.open(p, "rt").read()
     assert read(tmp_path / "a" / "sample_chrT_R1.fastq.gz") == read(tmp_path / "b" / "sample_chrT_R1.fastq.gz")
 
 

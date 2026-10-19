@@ -71,5 +71,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t nf-legacy-testkit:ci .
-      - run: docker run --rm nf-legacy-testkit:ci --version
+      - run: docker build -t nf-retrofit:ci .
+      - run: docker run --rm nf-retrofit:ci --version

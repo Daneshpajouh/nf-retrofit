@@ -1,6 +1,6 @@
 import json
 
-from nf_legacy_testkit.runlog import _duration_ms, summarise, write_manifest
+from nf_retrofit.runlog import _duration_ms, summarise, write_manifest
 
 
 def test_failed_task_marks_the_run_failed(tmp_path, data_dir):
@@ -29,7 +29,7 @@ def test_durations_in_nextflow_trace_format():
 
 
 def test_read_pair_glob_expands_to_both_files(tmp_path):
-    from nf_legacy_testkit.runlog import expand
+    from nf_retrofit.runlog import expand
 
     for name in ("s1_1.fq.gz", "s1_2.fq.gz", "s1_3.fq.gz"):
         (tmp_path / name).write_text("@r\nA\n+\nI\n")

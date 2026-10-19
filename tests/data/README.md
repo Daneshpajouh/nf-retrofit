@@ -3,7 +3,7 @@
 All files are synthetic and small.
 
 `rnaseq_known/` is the known-answer set for rnaseq-nf, made with
-`nf-legacy-testkit transcripts --counts tx_a=400,tx_b=800,tx_c=1600,tx_d=1200 --seed 7`:
+`nf-retrofit transcripts --counts tx_a=400,tx_b=800,tx_c=1600,tx_d=1200 --seed 7`:
 four random 1,500-base transcripts that share no 31-mer, and 4,000 read pairs (2 x 75 bases,
 inserts around 250) drawn in those numbers. `expected.json` holds the counts and TPMs
 (100,000, 200,000, 400,000 and 300,000).

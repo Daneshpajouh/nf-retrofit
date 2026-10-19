@@ -23,7 +23,7 @@ SUCCESS: Executed 2 tests in 34.4s
 
 Salmon returned 400, 800, 1,600 and 1,200 reads, the drawn numbers exactly, with a 100% mapping rate. The test reads `quant.sf` from the task directory because rnaseq-nf does not publish it.
 
-For variant callers, `nf-legacy-testkit germline` writes paired reads from any reference with a known set of heterozygous and homozygous SNVs and a truth VCF, and `nf-legacy-testkit check-vcf calls.vcf truth.vcf` compares the PASS calls after trimming padded alleles. On a 1.5 Mb reference (hg19 chr20:30,000,001-31,000,000 and chr21:33,000,001-33,500,000 from the UCSC REST API), 80 simulated SNVs (24 homozygous) at 30x, aligned with bwa 0.7.19 and called with bcftools 1.23.1 `mpileup | call -mv`: 80 of 80 found, 1 extra call, 10.9 s end to end.
+For variant callers, `nf-retrofit germline` writes paired reads from any reference with a known set of heterozygous and homozygous SNVs and a truth VCF, and `nf-retrofit check-vcf calls.vcf truth.vcf` compares the PASS calls after trimming padded alleles. On a 1.5 Mb reference (hg19 chr20:30,000,001-31,000,000 and chr21:33,000,001-33,500,000 from the UCSC REST API), 80 simulated SNVs (24 homozygous) at 30x, aligned with bwa 0.7.19 and called with bcftools 1.23.1 `mpileup | call -mv`: 80 of 80 found, 1 extra call, 10.9 s end to end.
 
 ## 4. Whole-pipeline runs with logs
 

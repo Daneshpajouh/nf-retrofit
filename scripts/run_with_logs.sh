@@ -20,7 +20,7 @@ for arg in "$@"; do
     [[ "$arg" == -* ]] || inputs+=("$arg")
 done
 
-python3 -m nf_legacy_testkit manifest --out "$run_dir/manifest.json" \
+python3 -m nf_retrofit manifest --out "$run_dir/manifest.json" \
     --pipeline-dir "$pipeline" --container "${PIPELINE_CONTAINER:-from the pipeline config}" \
     --param "args=$*" ${inputs[@]+"${inputs[@]}"}
 
@@ -34,5 +34,5 @@ nextflow -log "$run_dir/nextflow.log" run "$pipeline" \
 status=${PIPESTATUS[0]}
 set -e
 
-python3 -m nf_legacy_testkit summarise --trace "$run_dir/trace.tsv" --outdir "$run_dir/results" \
+python3 -m nf_retrofit summarise --trace "$run_dir/trace.tsv" --outdir "$run_dir/results" \
     --exit-code "$status" --manifest "$run_dir/manifest.json" --out "$run_dir/summary.json"
