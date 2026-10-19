@@ -1,0 +1,6 @@
+[submodule "examples/rnaseq-nf"]
+	path = examples/rnaseq-nf
+	url = https://github.com/nextflow-io/rnaseq-nf.git
+[submodule "examples/callings-nf"]
+	path = examples/callings-nf
+	url = https://github.com/CRG-CNAG/CalliNGS-NF.git
