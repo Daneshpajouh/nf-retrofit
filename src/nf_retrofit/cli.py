@@ -48,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("lint-report", help="markdown summary of `nextflow lint` output")
     p.add_argument("lint_output", type=Path)
     p.add_argument("--title", required=True)
+    p.add_argument("--exit-code", type=int, default=None, help="exit status of the `nextflow lint` run")
 
     p = sub.add_parser("manifest", help="write a run manifest before a run")
     p.add_argument("--out", required=True, type=Path)
@@ -82,13 +83,19 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, indent=2))
         return 0 if not result["missed"] else 1
     if args.command == "lint-report":
-        print(lint_file_to_markdown(args.lint_output, args.title), end="")
+        try:
+            report = lint_file_to_markdown(args.lint_output, args.title, args.exit_code)
+        except ValueError as err:
+            print(f"{args.lint_output}: {err}", file=sys.stderr)
+            return 1
+        print(report, end="")
         return 0
     if args.command == "manifest":
         params = dict(item.split("=", 1) for item in args.param)
         write_manifest(args.out, expand(args.inputs), params, args.pipeline_dir, args.container)
         return 0
     summary = summarise(args.trace, args.outdir, args.exit_code, args.manifest, args.out)
+    retried = f"{len(summary['retried_tasks'])} retried, " if summary["retried_tasks"] else ""
     print(f"{summary['status']}: {summary['tasks']} tasks, {len(summary['failed_tasks'])} failed, "
-          f"{summary['duration_s']} s")
+          f"{retried}{summary['duration_s']} s")
     return 0 if summary["status"] == "OK" else 1

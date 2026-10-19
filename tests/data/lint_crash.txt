@@ -1,0 +1,3 @@
+Linting Nextflow code..
+Linting: examples/callings-nf/nextflow.config
+java.lang.OutOfMemoryError: Java heap space

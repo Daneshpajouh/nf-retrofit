@@ -11,8 +11,10 @@ unit:
 nf-test:
 	$(NF_TEST) test tests/nf-test/rnaseq-nf
 
+# lint exits 1 when it finds errors, so its status is kept and checked by lint-report
 lint-reports:
-	for p in rnaseq-nf callings-nf; do \
-	  nextflow lint examples/$$p > docs/lint/$$p.txt 2>&1 || true; \
-	  PYTHONPATH=src $(PYTHON) -m nf_retrofit lint-report docs/lint/$$p.txt --title "nextflow lint: $$p" > docs/lint/$$p.md; \
+	set -e; for p in rnaseq-nf callings-nf; do \
+	  status=0; nextflow lint examples/$$p > docs/lint/$$p.txt 2>&1 || status=$$?; \
+	  PYTHONPATH=src $(PYTHON) -m nf_retrofit lint-report docs/lint/$$p.txt --title "nextflow lint: $$p" \
+	    --exit-code $$status > docs/lint/$$p.md; \
 	done

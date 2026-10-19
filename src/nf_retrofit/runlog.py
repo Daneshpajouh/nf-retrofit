@@ -2,8 +2,8 @@
 
 The manifest pins what went in (input files with SHA-256, parameters, the pipeline
 commit, the container, the start time). The summary reads Nextflow's trace file and
-records what came out (status, duration, failed tasks, per-process resources, output
-files with SHA-256).
+records what came out (status, duration, failed and retried tasks, per-process
+resources, output files with SHA-256).
 """
 
 from __future__ import annotations
@@ -91,17 +91,32 @@ def _duration_ms(text: str) -> float | None:
 
 
 def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: Path) -> dict[str, object]:
+    """Judge each task by its last attempt.
+
+    Nextflow writes one trace row per attempt, under the same name and a new task_id, so a
+    task killed for memory and then retried has a FAILED row before its COMPLETED one.
+    Realtime and peak memory still count every attempt, since a killed attempt used them.
+    """
     rows = list(csv.DictReader(trace.open(encoding="utf-8"), delimiter="\t")) if trace.exists() else []
-    failed = [r for r in rows if r.get("status") not in ("COMPLETED", "CACHED")]
+    attempts: dict[str, list[dict[str, str]]] = {}
+    for r in sorted(rows, key=lambda r: int(r.get("task_id") or 0)):
+        attempts.setdefault(r.get("name", ""), []).append(r)
+    failed = [a[-1] for a in attempts.values() if a[-1].get("status") not in ("COMPLETED", "CACHED")]
+    retried = [
+        {"name": name, "attempts": len(a), "exits": [r.get("exit") for r in a]}
+        for name, a in attempts.items()
+        if len(a) > 1
+    ]
     processes: dict[str, dict[str, object]] = {}
-    for r in rows:
-        name = r.get("name", "").split(" (")[0]
+    for task_name, task_attempts in attempts.items():
+        name = task_name.split(" (")[0]
         entry = processes.setdefault(name, {"tasks": 0, "realtime_ms": 0.0, "peak_rss": [], "statuses": set()})
         entry["tasks"] += 1
-        entry["realtime_ms"] += _duration_ms(r.get("realtime", "")) or 0.0
-        if r.get("peak_rss") not in (None, "", "-"):
-            entry["peak_rss"].append(r["peak_rss"])
-        entry["statuses"].add(r.get("status", ""))
+        entry["statuses"].add(task_attempts[-1].get("status", ""))
+        for r in task_attempts:
+            entry["realtime_ms"] += _duration_ms(r.get("realtime", "")) or 0.0
+            if r.get("peak_rss") not in (None, "", "-"):
+                entry["peak_rss"].append(r["peak_rss"])
     resource_table = [
         {
             "process": name,
@@ -121,8 +136,9 @@ def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: P
         "started_utc": started,
         "finished_utc": finished.isoformat(timespec="seconds"),
         "duration_s": round((finished - datetime.fromisoformat(started)).total_seconds(), 1),
-        "tasks": len(rows),
+        "tasks": len(attempts),
         "failed_tasks": [{"name": r.get("name"), "status": r.get("status"), "exit": r.get("exit")} for r in failed],
+        "retried_tasks": retried,
         "resources": resource_table,
         "outputs": [
             {"path": str(p.relative_to(out_dir)), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs

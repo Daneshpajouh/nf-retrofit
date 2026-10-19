@@ -14,3 +14,5 @@ inserts around 250) drawn in those numbers. `expected.json` holds the counts and
 | `quant_close.sf`, `expected_counts.json` | Salmon counts 0.4% and 0.5% off the expected values |
 | `lint_two_errors.txt` | two entries cut from the real `nextflow lint` output for CalliNGS-NF |
 | `trace_one_failed.tsv` | a Nextflow trace with one COMPLETED task and one FAILED with exit 127 |
+| `trace_retried_oom.tsv` | one task killed with exit 137, then COMPLETED on its retry |
+| `lint_crash.txt` | `nextflow lint` output cut off by a Java out-of-memory error |
