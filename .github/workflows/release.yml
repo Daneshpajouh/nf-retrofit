@@ -22,5 +22,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/daneshpajouh/nf-retrofit:${{ github.ref_name }}
+            ghcr.io/daneshpajouh/nf-retrofit:latest
