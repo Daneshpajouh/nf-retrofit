@@ -1,0 +1,10 @@
+Linting Nextflow code..
+Linting: examples/rnaseq-nf/nextflow.config
+Linting: examples/rnaseq-nf/modules/quant/main.nf
+Linting: examples/rnaseq-nf/modules/multiqc/main.nf
+Linting: examples/rnaseq-nf/modules/rnaseq.nf
+Linting: examples/rnaseq-nf/modules/index/main.nf
+Linting: examples/rnaseq-nf/modules/fastqc/main.nf
+Linting: examples/rnaseq-nf/main.nf
+Nextflow linting complete!
+ ✅ 7 files had no errors

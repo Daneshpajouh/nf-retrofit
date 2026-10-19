@@ -1,0 +1,46 @@
+Linting Nextflow code..
+Linting: examples/callings-nf/nextflow.config
+Linting: examples/callings-nf/modules.nf
+Linting: examples/callings-nf/main.nf
+Error examples/callings-nf/main.nf:41:1: Statements cannot be mixed with script declarations -- move statements into a process, workflow, or function
+│  39 | params.results    = "results"
+│  40 | 
+│  41 | log.info """\
+│     | ^^^^^^^^^^^^^
+│  42 | C A L L I N G S  -  N F    v 2.1 
+╰  43 | ================================
+
+Warn  examples/callings-nf/main.nf:72:18: The use of `Channel` to access channel factories is deprecated -- use `channel` instead
+│  72 |       reads_ch = Channel.fromFilePairs(params.reads)
+╰     |                  ^^^^^^^
+
+
+Error examples/callings-nf/modules.nf:161:45: `index` is already declared
+│ 161 |     tuple val(replicateId), path(bam), path(index)
+╰     |                                             ^^^^^
+
+Error examples/callings-nf/modules.nf:191:45: `index` is already declared
+│ 191 |     tuple val(replicateId), path(bam), path(index)
+╰     |                                             ^^^^^
+
+Warn  examples/callings-nf/modules.nf:159:10: Variable was declared but not used
+│ 159 |     path index
+╰     |          ^^^^^
+
+Warn  examples/callings-nf/modules.nf:189:10: Variable was declared but not used
+│ 189 |     path index
+╰     |          ^^^^^
+
+Warn  examples/callings-nf/modules.nf:241:37: Implicit closure parameter is deprecated, declare an explicit parameter instead
+│ 241 |   def bam_params = bam.collect{ "-I $it" }.join(' ')
+╰     |                                     ^^
+
+Warn  examples/callings-nf/modules.nf:342:37: Implicit closure parameter is deprecated, declare an explicit parameter instead
+│ 342 |   def bam_params = bam.collect{ "-I $it" }.join(' ')
+╰     |                                     ^^
+
+
+Nextflow linting complete!
+ ❌ 2 files had 3 errors
+ ⚠️  2 files had 5 warnings
+ ✅ 1 file had no errors
