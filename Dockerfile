@@ -5,7 +5,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-pip curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# CalliNGS-NF still needs the `phase` operator, so the image pins a Nextflow that has it.
+# The CalliNGS-NF tests need the `phase` operator, gone after Nextflow 22.04.5, so they run in
+# the CI job that pins 22.04.5, not in this image.
 ENV NXF_VER=24.04.4 NXF_HOME=/opt/nextflow
 RUN curl -fsSL https://get.nextflow.io | bash \
     && mv nextflow /usr/local/bin/ \
