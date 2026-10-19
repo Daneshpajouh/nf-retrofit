@@ -11,8 +11,8 @@ Two published pipelines are the worked examples:
 
 ## What it adds
 
-- `conf/test.config` and `conf/slurm.config`: overlays applied with `-c`. The test overlay runs one CPU and 2 GB per task, turns on `pipefail` in task shells and pulls amd64 images on arm64 hosts. The Slurm overlay turns queue, account, wall time and resource caps into parameters.
-- `tests/nf-test/`: pipeline tests with known answers, plus a `-stub-run` test.
+- `conf/test.config` and `conf/slurm.config`: overlays applied with `-c`. The test overlay caps each task at one CPU and 2 GB, turns on `pipefail` in task shells and pulls amd64 images on arm64 hosts. The Slurm overlay turns queue, account, wall time and resource caps into parameters.
+- `tests/nf-test/`: pipeline tests with known answers. The `-stub-run` test documents a gap: rnaseq-nf has no stub blocks, so `-stub-run` runs the real tools.
 - `docs/lint/`: what `nextflow lint` 26.10.2 rejects in each pipeline, raw and counted.
 - `nf-retrofit`, a small Python package: synthetic transcriptomes with known read counts, reads from any reference with known SNVs, checks of Salmon output and of VCFs against a truth set, lint summaries, and the run manifest and summary.
 - `scripts/run_with_logs.sh`: a manifest before the run, logs and trace during, a summary after (`docs/logging.md`).
@@ -20,14 +20,17 @@ Two published pipelines are the worked examples:
 
 ## Quick start
 
+Needs Python 3.11 or later.
+
 ```
-git clone --recurse-submodules <this repository>
+git clone --recurse-submodules https://github.com/Daneshpajouh/nf-retrofit.git
 cd nf-retrofit
+python3 -m pip install -e '.[dev]'
 make unit
 ```
 
 ```
-18 passed in 0.85s
+22 passed in 1.18s
 ```
 
 ```
@@ -35,9 +38,9 @@ make nf-test        # needs Docker, Nextflow and nf-test
 ```
 
 ```
-  Test 'four unique transcripts, 4,000 fragments' PASSED (14.1s)
-  Test 'stub run still runs the four tasks' PASSED (20.2s)
-SUCCESS: Executed 2 tests in 34.4s
+  Test 'four unique transcripts, 4,000 fragments' PASSED (15.7s)
+  Test '-stub-run falls through to the real scripts (no stub blocks)' PASSED (13.1s)
+SUCCESS: Executed 2 tests in 28.8s
 ```
 
 A logged run of rnaseq-nf on the known-answer data:
@@ -56,6 +59,11 @@ OK: 4 tasks, 0 failed, 25.3 s
 ## Findings so far
 
 rnaseq-nf: Salmon's output is never published to `--outdir`; a relative `--transcriptome` path fails; CI checks only the exit status; no stub blocks; the image is amd64 only. CalliNGS-NF: it does not run on Nextflow 26.10.2 (top-level statements, duplicate input names, the removed `phase` operator), and the docker profile's user mapping is set outside the `docker` scope and ignored. Details and line numbers in `docs/findings/`.
+
+## Known limits
+
+- `check-vcf` matches on site and allele only: it ignores genotype, and extra calls are counted but do not fail the check.
+- The published image is useful only for the Python CLI: it has no Docker client and none of `conf/`, `tests/` or `scripts/`.
 
 ## Layout
 

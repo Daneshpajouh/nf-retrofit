@@ -1,7 +1,9 @@
 """Compare called variants with a truth VCF after trimming shared flanking bases.
 
 Callers write the same variant with different padding (CCTC>CC and CCT>C are one
-deletion), so alleles are reduced to their minimal form before matching.
+deletion), so alleles are reduced to their minimal form before matching. Trimming does
+not left-align an indel in a repeat, so normalise both VCFs first with
+`bcftools norm -f ref.fa -m -both`.
 """
 
 from __future__ import annotations
