@@ -53,7 +53,8 @@ jobs:
   callings-nf:
     runs-on: ubuntu-latest
     env:
-      NXF_VER: "24.04.4"
+      # modules.nf uses phase: 22.04.5 still has it, 22.10.8 and later releases do not.
+      NXF_VER: "22.04.5"
       NXF_SYNTAX_PARSER: v1
     steps:
       - uses: actions/checkout@v4

@@ -6,7 +6,7 @@ Pinned at master commit 9e7ebf0 (2021-08-25). The only tag, v1.0.0, is DSL1 (`fi
 
 With the default parser the script fails to compile: `log.info` sits at the top level of `main.nf:41`, and `RNASEQ_GATK_SPLITNCIGAR` and the next process each declare two inputs named `index` (`modules.nf:159` and `161`, `189` and `191`). `nextflow lint` reports 3 errors and 5 warnings (`docs/lint/callings-nf.md`).
 
-With the legacy parser (`NXF_SYNTAX_PARSER=v1`) the run gets further and stops before any task: `Unknown method invocation 'phase' on channel type` at `modules.nf:371`, in `group_per_sample`. `phase` has been removed; `join` on the sample key can replace it here, because both channels carry the sample ID first.
+With the legacy parser (`NXF_SYNTAX_PARSER=v1`) the run gets further and stops before any task: `Unknown method invocation 'phase' on channel type` at `modules.nf:371`, in `group_per_sample`. `phase` has been removed: in containers with Java 17 and the official launcher, a two-channel `phase` runs on Nextflow 22.04.5 and fails with this error on 22.10.8, 23.10.1 and 24.04.4. `join` on the sample key can replace it here, because both channels carry the sample ID first.
 
 The pipeline's CI installs whatever `get.nextflow.io` serves, without a version pin, so a CI run today would hit both errors. Pinning `NXF_VER` in CI, and fixing the three items above, would keep the pipeline runnable.
 
@@ -20,4 +20,4 @@ Two processes take both the genome index and a BAM index as `path index` (`modul
 
 ## What this kit could not run here
 
-The full pipeline did not run on this Mac. Pinning an older Nextflow with `NXF_VER=24.04.4` failed with the Homebrew launcher before starting. CI runs `tests/nf-test/callings-nf/bundled_data.nf.test` on ubuntu-latest with the official launcher, Java 17, `NXF_VER=24.04.4` and the legacy parser.
+The full pipeline did not run on this Mac: the Homebrew launcher would not pin an older Nextflow. CI runs `tests/nf-test/callings-nf/bundled_data.nf.test` on ubuntu-latest with the official launcher, Java 17 and `NXF_VER=22.04.5`; nf-test 0.9.5 runs on that release (checked in a container). The first CI run pinned 24.04.4 and failed on `phase`.
