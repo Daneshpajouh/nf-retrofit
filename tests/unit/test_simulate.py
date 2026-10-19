@@ -18,7 +18,10 @@ def _toy_reference(tmp_path, length=12_000):
 
 
 def test_apply_handles_neighbouring_snv_and_deletion():
-    variants = [Variant("1", 3, "C", "T", "snv", "het"), Variant("1", 5, "GGT", "G", "indel", "het")]
+    variants = [
+        Variant("1", 3, "C", "T", "snv", "het"),
+        Variant("1", 5, "GGT", "G", "indel", "het"),
+    ]
     assert apply("AACCGGTT", "1", variants) == "AATCGT"
 
 
@@ -34,8 +37,14 @@ def test_same_seed_gives_identical_reads(tmp_path):
     ref = _toy_reference(tmp_path)
     simulate_germline(ref, tmp_path / "a", snvs_per_contig=4, depth=3, seed=11)
     simulate_germline(ref, tmp_path / "b", snvs_per_contig=4, depth=3, seed=11)
-    read = lambda p: gzip.open(p, "rt").read()
-    assert read(tmp_path / "a" / "sample_chrT_R1.fastq.gz") == read(tmp_path / "b" / "sample_chrT_R1.fastq.gz")
+
+    def read(p):
+        with gzip.open(p, "rt") as fq:
+            return fq.read()
+
+    assert read(tmp_path / "a" / "sample_chrT_R1.fastq.gz") == read(
+        tmp_path / "b" / "sample_chrT_R1.fastq.gz"
+    )
 
 
 def test_homozygous_sites_have_no_reference_reads_and_het_sites_have_both(tmp_path):
@@ -55,7 +64,7 @@ def test_homozygous_sites_have_no_reference_reads_and_het_sites_have_both(tmp_pa
     for line in (tmp_path / "g" / "truth.vcf").read_text().splitlines():
         if line.startswith("#"):
             continue
-        _chrom, pos, _id, ref, alt, _q, _f, info = line.split("\t")
+        _chrom, pos, _id, _ref, alt, _q, _f, info = line.split("\t")
         i = int(pos) - 1
         n_alt = count(seq[i - 12 : i] + alt + seq[i + 1 : i + 13])
         n_ref = count(seq[i - 12 : i + 13])

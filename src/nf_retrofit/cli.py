@@ -44,13 +44,18 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("check-vcf", help="compare called SNVs with a truth VCF")
     p.add_argument("calls", type=Path)
     p.add_argument("truth", type=Path)
-    p.add_argument("--fail-on-extra", action="store_true",
-                   help="also fail when a PASS call has an allele the truth VCF lacks")
+    p.add_argument(
+        "--fail-on-extra",
+        action="store_true",
+        help="also fail when a PASS call has an allele the truth VCF lacks",
+    )
 
     p = sub.add_parser("lint-report", help="markdown summary of `nextflow lint` output")
     p.add_argument("lint_output", type=Path)
     p.add_argument("--title", required=True)
-    p.add_argument("--exit-code", type=int, default=None, help="exit status of the `nextflow lint` run")
+    p.add_argument(
+        "--exit-code", type=int, default=None, help="exit status of the `nextflow lint` run"
+    )
 
     p = sub.add_parser("manifest", help="write a run manifest before a run")
     p.add_argument("--out", required=True, type=Path)
@@ -72,13 +77,21 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(simulate_transcripts(args.out, args.counts, seed=args.seed), indent=2))
         return 0
     if args.command == "check-quant":
-        problems = compare_quant(args.quant_sf, json.loads(args.expected.read_text()), args.tolerance)
+        problems = compare_quant(
+            args.quant_sf, json.loads(args.expected.read_text()), args.tolerance
+        )
         for line in problems:
             print(line, file=sys.stderr)
         print("PASS" if not problems else f"FAIL: {len(problems)} transcripts off")
         return 1 if problems else 0
     if args.command == "germline":
-        print(json.dumps(simulate_germline(args.reference, args.out, args.snvs_per_contig, depth=args.depth, seed=args.seed)))
+        print(
+            json.dumps(
+                simulate_germline(
+                    args.reference, args.out, args.snvs_per_contig, depth=args.depth, seed=args.seed
+                )
+            )
+        )
         return 0
     if args.command == "check-vcf":
         result = compare_vcf(args.calls, args.truth, strict=args.fail_on_extra)
@@ -98,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     summary = summarise(args.trace, args.outdir, args.exit_code, args.manifest, args.out)
     retried = f"{len(summary['retried_tasks'])} retried, " if summary["retried_tasks"] else ""
-    print(f"{summary['status']}: {summary['tasks']} tasks, {len(summary['failed_tasks'])} failed, "
-          f"{retried}{summary['duration_s']} s")
+    print(
+        f"{summary['status']}: {summary['tasks']} tasks, {len(summary['failed_tasks'])} failed, "
+        f"{retried}{summary['duration_s']} s"
+    )
     return 0 if summary["status"] == "OK" else 1

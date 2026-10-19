@@ -123,7 +123,10 @@ def write_pairs(
     r1_path = out_prefix.with_name(out_prefix.name + "_R1.fastq.gz")
     r2_path = out_prefix.with_name(out_prefix.name + "_R2.fastq.gz")
     qual = "I" * read_length
-    with gzip.open(r1_path, "wt", compresslevel=3) as r1, gzip.open(r2_path, "wt", compresslevel=3) as r2:
+    with (
+        gzip.open(r1_path, "wt", compresslevel=3) as r1,
+        gzip.open(r2_path, "wt", compresslevel=3) as r2,
+    ):
         for n in range(n_pairs):
             seq = rng.choices([h for h, _ in haplotypes], weights=weights)[0]
             insert = max(read_length + 10, int(rng.gauss(insert_mean, insert_sd)))
@@ -145,13 +148,18 @@ def write_vcf(path: Path, variants: list[Variant], ref: dict[str, str]) -> None:
     with path.open("w", encoding="ascii") as out:
         out.write("##fileformat=VCFv4.2\n")
         out.write('##INFO=<ID=TYPE,Number=1,Type=String,Description="SNV or INDEL">\n')
-        out.write('##INFO=<ID=ZYG,Number=1,Type=String,Description="het or hom, for simulated germline variants">\n')
+        out.write(
+            "##INFO=<ID=ZYG,Number=1,Type=String,"
+            'Description="het or hom, for simulated germline variants">\n'
+        )
         for contig, seq in ref.items():
             out.write(f"##contig=<ID={contig},length={len(seq)}>\n")
         out.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
         for v in variants:
             zyg = f";ZYG={v.origin}" if v.origin in ("het", "hom") else ""
-            out.write(f"{v.contig}\t{v.pos}\t.\t{v.ref}\t{v.alt}\t.\tPASS\tTYPE={v.kind.upper()}{zyg}\n")
+            out.write(
+                f"{v.contig}\t{v.pos}\t.\t{v.ref}\t{v.alt}\t.\tPASS\tTYPE={v.kind.upper()}{zyg}\n"
+            )
 
 
 def simulate_germline(
@@ -178,10 +186,16 @@ def simulate_germline(
     for contig, seq in ref.items():
         n_pairs = int(depth * len(seq) / (2 * read_length))
         r1, r2 = write_pairs(
-            [(hap_a[contig], 0.5), (hap_b[contig], 0.5)], n_pairs, out / f"{sample}_{contig}", rng, read_length
+            [(hap_a[contig], 0.5), (hap_b[contig], 0.5)],
+            n_pairs,
+            out / f"{sample}_{contig}",
+            rng,
+            read_length,
         )
         files.append([r1.name, r2.name])
-    truth = [Variant(v.contig, v.pos, v.ref, v.alt, v.kind, "hom" if v in hom else "het") for v in placed]
+    truth = [
+        Variant(v.contig, v.pos, v.ref, v.alt, v.kind, "hom" if v in hom else "het") for v in placed
+    ]
     write_vcf(out / "truth.vcf", truth, ref)
     summary = {
         "seed": seed,

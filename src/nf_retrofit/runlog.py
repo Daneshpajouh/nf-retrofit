@@ -30,7 +30,9 @@ def git_commit(repo: Path) -> str | None:
     try:
         out = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "HEAD"],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
     except (OSError, subprocess.CalledProcessError):
         return None
@@ -69,7 +71,9 @@ def write_manifest(
         "pipeline_commit": git_commit(pipeline_dir),
         "container": container,
         "params": params,
-        "inputs": [{"path": str(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in inputs],
+        "inputs": [
+            {"path": str(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in inputs
+        ],
     }
     out.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return manifest
@@ -81,7 +85,13 @@ def _duration_ms(text: str) -> float | None:
         return None
     total = 0.0
     for part in text.split():
-        for unit, factor in (("ms", 1), ("s", 1000), ("m", 60_000), ("h", 3_600_000), ("d", 86_400_000)):
+        for unit, factor in (
+            ("ms", 1),
+            ("s", 1000),
+            ("m", 60_000),
+            ("h", 3_600_000),
+            ("d", 86_400_000),
+        ):
             if part.endswith(unit) and part[: -len(unit)].replace(".", "", 1).isdigit():
                 total += float(part[: -len(unit)]) * factor
                 break
@@ -90,18 +100,24 @@ def _duration_ms(text: str) -> float | None:
     return total
 
 
-def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: Path) -> dict[str, object]:
+def summarise(
+    trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: Path
+) -> dict[str, object]:
     """Judge each task by its last attempt.
 
     Nextflow writes one trace row per attempt, under the same name and a new task_id, so a
     task killed for memory and then retried has a FAILED row before its COMPLETED one.
     Realtime and peak memory still count every attempt, since a killed attempt used them.
     """
-    rows = list(csv.DictReader(trace.open(encoding="utf-8"), delimiter="\t")) if trace.exists() else []
+    rows = (
+        list(csv.DictReader(trace.open(encoding="utf-8"), delimiter="\t")) if trace.exists() else []
+    )
     attempts: dict[str, list[dict[str, str]]] = {}
     for r in sorted(rows, key=lambda r: int(r.get("task_id") or 0)):
         attempts.setdefault(r.get("name", ""), []).append(r)
-    failed = [a[-1] for a in attempts.values() if a[-1].get("status") not in ("COMPLETED", "CACHED")]
+    failed = [
+        a[-1] for a in attempts.values() if a[-1].get("status") not in ("COMPLETED", "CACHED")
+    ]
     retried = [
         {"name": name, "attempts": len(a), "exits": [r.get("exit") for r in a]}
         for name, a in attempts.items()
@@ -110,7 +126,9 @@ def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: P
     processes: dict[str, dict[str, object]] = {}
     for task_name, task_attempts in attempts.items():
         name = task_name.split(" (")[0]
-        entry = processes.setdefault(name, {"tasks": 0, "realtime_ms": 0.0, "peak_rss": [], "statuses": set()})
+        entry = processes.setdefault(
+            name, {"tasks": 0, "realtime_ms": 0.0, "peak_rss": [], "statuses": set()}
+        )
         entry["tasks"] += 1
         entry["statuses"].add(task_attempts[-1].get("status", ""))
         for r in task_attempts:
@@ -137,11 +155,15 @@ def summarise(trace: Path, out_dir: Path, exit_code: int, manifest: Path, out: P
         "finished_utc": finished.isoformat(timespec="seconds"),
         "duration_s": round((finished - datetime.fromisoformat(started)).total_seconds(), 1),
         "tasks": len(attempts),
-        "failed_tasks": [{"name": r.get("name"), "status": r.get("status"), "exit": r.get("exit")} for r in failed],
+        "failed_tasks": [
+            {"name": r.get("name"), "status": r.get("status"), "exit": r.get("exit")}
+            for r in failed
+        ],
         "retried_tasks": retried,
         "resources": resource_table,
         "outputs": [
-            {"path": str(p.relative_to(out_dir)), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs
+            {"path": str(p.relative_to(out_dir)), "bytes": p.stat().st_size, "sha256": sha256(p)}
+            for p in outputs
         ],
     }
     out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

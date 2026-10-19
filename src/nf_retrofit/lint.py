@@ -20,9 +20,19 @@ def parse_lint(text: str) -> list[dict[str, object]]:
         match = LINE.match(raw)
         if match:
             level, path, line, col, message = match.groups()
-            findings.append({"level": level, "file": path, "line": int(line), "col": int(col), "message": message})
+            findings.append(
+                {
+                    "level": level,
+                    "file": path,
+                    "line": int(line),
+                    "col": int(col),
+                    "message": message,
+                }
+            )
     if not findings and "Nextflow linting complete" not in text:
-        raise ValueError("no findings and no 'Nextflow linting complete' line: not a finished lint run")
+        raise ValueError(
+            "no findings and no 'Nextflow linting complete' line: not a finished lint run"
+        )
     return findings
 
 

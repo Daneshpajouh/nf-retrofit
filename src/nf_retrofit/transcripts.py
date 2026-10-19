@@ -44,13 +44,16 @@ def simulate_transcripts(
     parts = []
     for name, n in counts.items():
         part = out / f".part_{name}"
-        write_pairs([(seqs[name], 1.0)], n, part, rng, read_length=75, insert_mean=250, insert_sd=20)
+        write_pairs(
+            [(seqs[name], 1.0)], n, part, rng, read_length=75, insert_mean=250, insert_sd=20
+        )
         parts.append(part)
     _concat([p.with_name(p.name + "_R1.fastq.gz") for p in parts], r1)
     _concat([p.with_name(p.name + "_R2.fastq.gz") for p in parts], r2)
     total = sum(counts.values())
     expected = {
-        name: {"num_reads": n, "tpm": round(1e6 * n / total, 1), "length": length} for name, n in counts.items()
+        name: {"num_reads": n, "tpm": round(1e6 * n / total, 1), "length": length}
+        for name, n in counts.items()
     }
     (out / "expected.json").write_text(json.dumps(expected, indent=2) + "\n", encoding="utf-8")
     return expected
@@ -73,9 +76,12 @@ def _concat(parts: list[Path], target: Path) -> None:
             part.unlink()
 
 
-def compare_quant(quant_sf: str | Path, expected: dict[str, dict[str, float]], tolerance: float = 0.02) -> list[str]:
+def compare_quant(
+    quant_sf: str | Path, expected: dict[str, dict[str, float]], tolerance: float = 0.02
+) -> list[str]:
     """Return one line per transcript whose NumReads is off by more than `tolerance` (relative)."""
-    rows = {r["Name"]: r for r in csv.DictReader(Path(quant_sf).open(encoding="utf-8"), delimiter="\t")}
+    with Path(quant_sf).open(encoding="utf-8") as handle:
+        rows = {r["Name"]: r for r in csv.DictReader(handle, delimiter="\t")}
     problems = []
     for name, exp in expected.items():
         if name not in rows:

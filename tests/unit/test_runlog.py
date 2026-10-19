@@ -15,9 +15,13 @@ def test_failed_task_marks_the_run_failed(tmp_path, data_dir):
     out_dir = tmp_path / "results"
     out_dir.mkdir()
     (out_dir / "multiqc_report.html").write_text("<html></html>\n")
-    summary = summarise(data_dir / "trace_one_failed.tsv", out_dir, 0, manifest, tmp_path / "summary.json")
+    summary = summarise(
+        data_dir / "trace_one_failed.tsv", out_dir, 0, manifest, tmp_path / "summary.json"
+    )
     assert summary["status"] == "FAILED"
-    assert summary["failed_tasks"] == [{"name": "RNASEQ:QUANT (ggal_gut)", "status": "FAILED", "exit": "127"}]
+    assert summary["failed_tasks"] == [
+        {"name": "RNASEQ:QUANT (ggal_gut)", "status": "FAILED", "exit": "127"}
+    ]
     assert [r["process"] for r in summary["resources"]] == ["RNASEQ:INDEX", "RNASEQ:QUANT"]
     assert summary["outputs"][0]["path"] == "multiqc_report.html"
 
@@ -26,15 +30,27 @@ def test_task_killed_for_memory_and_completed_on_retry_leaves_the_run_ok(tmp_pat
     manifest = tmp_path / "manifest.json"
     manifest.write_text('{"started_utc": "2026-10-19T19:00:00+00:00"}\n')
     summary = summarise(
-        data_dir / "trace_retried_oom.tsv", tmp_path / "results", 0, manifest, tmp_path / "summary.json"
+        data_dir / "trace_retried_oom.tsv",
+        tmp_path / "results",
+        0,
+        manifest,
+        tmp_path / "summary.json",
     )
     assert summary["status"] == "OK"
     assert summary["tasks"] == 1
     assert summary["failed_tasks"] == []
-    assert summary["retried_tasks"] == [{"name": "P:QUANT (s1)", "attempts": 2, "exits": ["137", "0"]}]
+    assert summary["retried_tasks"] == [
+        {"name": "P:QUANT (s1)", "attempts": 2, "exits": ["137", "0"]}
+    ]
     # the killed attempt wrote no realtime or peak_rss ("-"), so both come from the retry
     assert summary["resources"] == [
-        {"process": "P:QUANT", "tasks": 1, "realtime_s": 180.0, "peak_rss": ["11.2 GB"], "statuses": ["COMPLETED"]}
+        {
+            "process": "P:QUANT",
+            "tasks": 1,
+            "realtime_s": 180.0,
+            "peak_rss": ["11.2 GB"],
+            "statuses": ["COMPLETED"],
+        }
     ]
 
 
