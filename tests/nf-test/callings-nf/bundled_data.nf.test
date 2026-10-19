@@ -1,0 +1,19 @@
+nextflow_pipeline {
+
+    name "CalliNGS-NF on its own bundled data"
+    script "examples/callings-nf/main.nf"
+    // modules.nf uses the `phase` operator, removed from current Nextflow; CI runs this
+    // file with NXF_VER=24.04.4 and NXF_SYNTAX_PARSER=v1 (see .github/workflows/ci.yml)
+
+    test("two replicates produce a final VCF") {
+        when {
+            params {
+                results = "${outputDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            assert path("${outputDir}/results").listFiles().any { it.name.endsWith('.vcf') || it.name.endsWith('.vcf.gz') }
+        }
+    }
+}

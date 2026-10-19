@@ -1,0 +1,75 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  unit:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: PYTHONPATH=src python -m pytest -q
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "26.10.2"
+      - run: pip install pytest
+      - name: Lint reports match the committed ones
+        run: |
+          make lint-reports
+          git diff --exit-code docs/lint/*.md
+
+  rnaseq-nf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "26.10.2"
+      - run: curl -fsSL https://get.nf-test.com | bash -s 0.9.5 && sudo mv nf-test /usr/local/bin/
+      - run: nf-test test tests/nf-test/rnaseq-nf
+
+  callings-nf:
+    runs-on: ubuntu-latest
+    env:
+      NXF_VER: "24.04.4"
+      NXF_SYNTAX_PARSER: v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: curl -fsSL https://get.nextflow.io | bash && sudo mv nextflow /usr/local/bin/
+      - run: curl -fsSL https://get.nf-test.com | bash -s 0.9.5 && sudo mv nf-test /usr/local/bin/
+      - run: nf-test test tests/nf-test/callings-nf
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t nf-legacy-testkit:ci .
+      - run: docker run --rm nf-legacy-testkit:ci --version

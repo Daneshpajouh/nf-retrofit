@@ -1,0 +1,43 @@
+nextflow_pipeline {
+
+    name "rnaseq-nf recovers known fragment counts"
+    script "examples/rnaseq-nf/main.nf"
+
+    test("four unique transcripts, 4,000 fragments") {
+        when {
+            params {
+                reads = "${projectDir}/tests/data/rnaseq_known/synthetic_{1,2}.fq.gz"
+                transcriptome = "${projectDir}/tests/data/rnaseq_known/transcriptome.fa"
+                outdir = "${outputDir}/results"
+            }
+        }
+        then {
+            assert workflow.success
+            assert workflow.trace.succeeded().size() == 4
+            // QUANT publishes nothing, so read quant.sf from its task directory
+            // reruns keep earlier task directories, so check every quant.sf found
+            def found = []
+            new File(outputDir.toString()).parentFile.toPath().resolve("work").toFile().eachFileRecurse { f -> if (f.name == 'quant.sf') found << f }
+            assert !found.isEmpty()
+            found.each { f ->
+                def rows = f.readLines().drop(1)*.split('\t')
+                assert rows.collectEntries { r -> [(r[0]): r[4] as double] } == [tx_a: 400d, tx_b: 800d, tx_c: 1600d, tx_d: 1200d]
+            }
+        }
+    }
+
+    // no process defines a stub block, so -stub-run executes the real scripts
+    test("stub run still runs the four tasks") {
+        options "-stub-run"
+        when {
+            params {
+                reads = "${projectDir}/tests/data/rnaseq_known/synthetic_{1,2}.fq.gz"
+                transcriptome = "${projectDir}/tests/data/rnaseq_known/transcriptome.fa"
+                outdir = "${outputDir}/results"
+            }
+        }
+        then {
+            assert workflow.trace.tasks().size() == 4
+        }
+    }
+}
