@@ -1,0 +1,10 @@
+.nf-test/
+.nextflow/
+.nextflow.log*
+work/
+runs/
+results/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.nf-test.log

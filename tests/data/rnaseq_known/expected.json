@@ -1,0 +1,22 @@
+{
+  "tx_a": {
+    "num_reads": 400,
+    "tpm": 100000.0,
+    "length": 1500
+  },
+  "tx_b": {
+    "num_reads": 800,
+    "tpm": 200000.0,
+    "length": 1500
+  },
+  "tx_c": {
+    "num_reads": 1600,
+    "tpm": 400000.0,
+    "length": 1500
+  },
+  "tx_d": {
+    "num_reads": 1200,
+    "tpm": 300000.0,
+    "length": 1500
+  }
+}
