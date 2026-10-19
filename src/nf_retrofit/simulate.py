@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 BASES = "ACGT"
+MARGIN = 500  # bases kept clear of each contig end when placing variants
 COMPLEMENT = str.maketrans("ACGTN", "TGCAN")
 
 
@@ -46,7 +47,7 @@ def pick_variants(
     snvs: dict[str, int],
     indels: dict[str, int],
     germline_per_kb: float,
-    margin: int = 500,
+    margin: int = MARGIN,
     spacing: int = 400,
 ) -> list[Variant]:
     variants: list[Variant] = []
@@ -176,7 +177,12 @@ def simulate_germline(
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
-    ref = read_fasta(fasta)
+    full_ref = read_fasta(fasta)
+    # a contig with no room for a variant inside the end margins gets no variants and no reads
+    skipped = [c for c, s in full_ref.items() if len(s) <= 2 * MARGIN]
+    ref = {c: s for c, s in full_ref.items() if c not in skipped}
+    if not ref:
+        raise ValueError(f"{fasta}: no contig longer than {2 * MARGIN} bases")
     placed = pick_variants(ref, rng, {c: snvs_per_contig for c in ref}, {}, germline_per_kb=0.0)
     hom = {v for v in placed if rng.random() < hom_fraction}
     hap_a = {c: apply(s, c, placed) for c, s in ref.items()}
@@ -196,7 +202,7 @@ def simulate_germline(
     truth = [
         Variant(v.contig, v.pos, v.ref, v.alt, v.kind, "hom" if v in hom else "het") for v in placed
     ]
-    write_vcf(out / "truth.vcf", truth, ref)
+    write_vcf(out / "truth.vcf", truth, full_ref)
     summary = {
         "seed": seed,
         "reference_bases": total,
@@ -204,6 +210,7 @@ def simulate_germline(
         "homozygous": len(hom),
         "depth": depth,
         "fastq": files,
+        "skipped_contigs": skipped,
     }
     (out / "truth.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary

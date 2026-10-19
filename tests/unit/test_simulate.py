@@ -73,3 +73,22 @@ def test_homozygous_sites_have_no_reference_reads_and_het_sites_have_both(tmp_pa
         assert n_alt > 0
         assert (n_ref == 0) if zyg == "hom" else (n_ref > 0)
     assert zygosities == {"het", "hom"}
+
+
+def test_contig_too_short_for_a_variant_gets_none_and_no_reads(tmp_path):
+    # placement keeps 500 bases clear of each end, so a 900-base contig cannot hold a variant
+    rng = random.Random(5)
+    path = tmp_path / "two.fa"
+    long_seq = "".join(rng.choice("ACGT") for _ in range(12_000))
+    short_seq = "".join(rng.choice("ACGT") for _ in range(900))
+    path.write_text(f">chrT\n{long_seq}\n>chrS\n{short_seq}\n")
+    summary = simulate_germline(path, tmp_path / "g", snvs_per_contig=4, depth=3, seed=11)
+    assert summary["skipped_contigs"] == ["chrS"]
+    assert summary["fastq"] == [["sample_chrT_R1.fastq.gz", "sample_chrT_R2.fastq.gz"]]
+    records = [
+        line.split("\t")[0]
+        for line in (tmp_path / "g" / "truth.vcf").read_text().splitlines()
+        if not line.startswith("#")
+    ]
+    assert records == ["chrT"] * 4
+    assert "##contig=<ID=chrS,length=900>" in (tmp_path / "g" / "truth.vcf").read_text()
