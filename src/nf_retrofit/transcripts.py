@@ -1,9 +1,9 @@
 """Known-answer data for transcript quantification.
 
-Transcripts are random sequences long enough that no 31-mer is shared between them,
-so every fragment maps to exactly one transcript and the expected read count per
-transcript is the number of fragments drawn from it. With equal lengths, expected TPM
-is 10^6 times each transcript's share of fragments.
+Transcripts are random sequences, and the simulator redraws any set in which two share
+a 31-mer on either strand, so each fragment has one true origin and the expected read
+count per transcript is the number of fragments drawn from it. With equal lengths,
+expected TPM is 10^6 times each transcript's share of fragments.
 """
 
 from __future__ import annotations
@@ -13,7 +13,9 @@ import json
 import random
 from pathlib import Path
 
-from .simulate import write_pairs
+from .simulate import COMPLEMENT, write_pairs
+
+K = 31  # Salmon's default k-mer length
 
 
 def simulate_transcripts(
@@ -26,7 +28,10 @@ def simulate_transcripts(
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
-    seqs = {name: "".join(rng.choice("ACGT") for _ in range(length)) for name in counts}
+    while True:
+        seqs = {name: "".join(rng.choice("ACGT") for _ in range(length)) for name in counts}
+        if not _share_a_kmer(list(seqs.values())):
+            break
     with (out / "transcriptome.fa").open("w", encoding="ascii") as fasta:
         for name, seq in seqs.items():
             fasta.write(f">{name}\n")
@@ -49,6 +54,16 @@ def simulate_transcripts(
     }
     (out / "expected.json").write_text(json.dumps(expected, indent=2) + "\n", encoding="utf-8")
     return expected
+
+
+def _share_a_kmer(seqs: list[str]) -> bool:
+    owner: dict[str, int] = {}
+    for n, seq in enumerate(seqs):
+        for strand in (seq, seq.translate(COMPLEMENT)[::-1]):
+            for i in range(len(strand) - K + 1):
+                if owner.setdefault(strand[i : i + K], n) != n:
+                    return True
+    return False
 
 
 def _concat(parts: list[Path], target: Path) -> None:

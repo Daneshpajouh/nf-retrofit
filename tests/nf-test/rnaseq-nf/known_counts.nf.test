@@ -26,8 +26,8 @@ nextflow_pipeline {
         }
     }
 
-    // no process defines a stub block, so -stub-run executes the real scripts
-    test("stub run still runs the four tasks") {
+    // documents a gap rather than testing stubs: no process in rnaseq-nf v2.4 has a stub block
+    test("-stub-run falls through to the real scripts (no stub blocks)") {
         options "-stub-run"
         when {
             params {
@@ -37,6 +37,7 @@ nextflow_pipeline {
             }
         }
         then {
+            assert workflow.success
             assert workflow.trace.tasks().size() == 4
         }
     }
