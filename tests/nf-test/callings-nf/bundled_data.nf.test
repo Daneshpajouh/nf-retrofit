@@ -13,7 +13,11 @@ nextflow_pipeline {
         }
         then {
             assert workflow.success
-            assert path("${outputDir}/results").listFiles().any { it.name.endsWith('.vcf') || it.name.endsWith('.vcf.gz') }
+            def vcfs = []
+            new File("${outputDir}/results").eachFileRecurse { f ->
+                if (f.name.endsWith('.vcf') || f.name.endsWith('.vcf.gz')) vcfs << f
+            }
+            assert vcfs
         }
     }
 }
