@@ -9,6 +9,7 @@ not left-align an indel in a repeat, so normalise both VCFs first with
 from __future__ import annotations
 
 import gzip
+import re
 from pathlib import Path
 
 
@@ -24,37 +25,96 @@ def minimal(pos: int, ref: str, alt: str) -> tuple[int, str, str]:
     return pos, ref, alt
 
 
-def read_variants(path: str | Path, pass_only: bool = True) -> set[tuple[str, int, str, str]]:
-    variants = set()
+Key = tuple[str, int, str, str]
+# GT allele codes in the order written, and whether the GT is phased.
+Genotype = tuple[tuple[str, ...], bool]
+
+
+def _genotype(fields: list[str], alt_index: int) -> Genotype | None:
+    """GT of the first sample for one ALT allele, or None when there is no genotype.
+
+    No GT field, an empty or cut-off value and an all-missing GT (`.`, `./.`) give None.
+    Other ALT alleles read as 0, as `bcftools norm -m -both` writes them when it
+    splits a record.
+    """
+    if len(fields) < 10:
+        return None
+    keys, values = fields[8].split(":"), fields[9].split(":")
+    if "GT" not in keys or keys.index("GT") >= len(values):
+        return None
+    gt = values[keys.index("GT")]
+    if not gt.strip("./|"):
+        return None
+    codes = tuple(
+        c if c in ("0", ".") else "1" if c == str(alt_index) else "0" for c in re.split("[/|]", gt)
+    )
+    return codes, "|" in gt and "/" not in gt
+
+
+def _same(called: Genotype, truth: Genotype, phased: bool) -> bool:
+    # Phase is compared only when asked and when both sides are phased.
+    if phased and called[1] and truth[1]:
+        return called[0] == truth[0]
+    return sorted(called[0]) == sorted(truth[0])
+
+
+def _show(gt: Genotype) -> str:
+    return ("|" if gt[1] else "/").join(gt[0])
+
+
+def _records(path: str | Path, pass_only: bool):
     with _open(Path(path)) as handle:
         for line in handle:
             if line.startswith("#") or not line.strip():
                 continue
-            chrom, pos, _id, ref, alts, _qual, filt = line.split("\t")[:7]
+            fields = line.rstrip("\r\n").split("\t")
+            chrom, pos, _id, ref, alts, _qual, filt = fields[:7]
             if pass_only and filt not in ("PASS", "."):
                 continue
-            for alt in alts.split(","):
+            for index, alt in enumerate(alts.split(","), start=1):
                 if alt in ("*", "<*>", "<NON_REF>"):
                     continue
                 # bases are case-insensitive in VCF; symbolic alleles such as <DEL> are not
                 alt = alt if alt.startswith("<") else alt.upper()
-                variants.add((chrom, *minimal(int(pos), ref.upper(), alt)))
-    return variants
+                key = (chrom, *minimal(int(pos), ref.upper(), alt))
+                yield key, _genotype(fields, index)
 
 
-def _label(variants: set[tuple[str, int, str, str]]) -> list[str]:
+def read_variants(path: str | Path, pass_only: bool = True) -> set[Key]:
+    return {key for key, _gt in _records(path, pass_only)}
+
+
+def read_genotypes(path: str | Path, pass_only: bool = True) -> dict[Key, Genotype | None]:
+    """GT per site and allele. A site and allele listed twice with different GTs gives
+    None, since the file does not say which one holds."""
+    genotypes: dict[Key, Genotype | None] = {}
+    for key, gt in _records(path, pass_only):
+        genotypes[key] = gt if genotypes.get(key, gt) == gt else None
+    return genotypes
+
+
+def _label(variants: set[Key]) -> list[str]:
     return sorted(f"{c}:{p} {r}>{a}" for c, p, r, a in variants)
 
 
-def compare_vcf(calls: str | Path, truth: str | Path, strict: bool = False) -> dict[str, object]:
-    """Site and allele match of PASS calls; genotype is never compared.
+def compare_vcf(
+    calls: str | Path,
+    truth: str | Path,
+    strict: bool = False,
+    genotypes: bool = False,
+    phased: bool = False,
+) -> dict[str, object]:
+    """Site and allele match of PASS calls; genotype only when asked.
 
     With `strict`, the result also lists each called allele the truth set lacks
-    (`extra_alleles`), so a caller can fail on it.
+    (`extra_alleles`), so a caller can fail on it. With `genotypes`, each matched
+    allele's GT is compared too: a different GT is listed under `genotype_mismatches`,
+    and a match where either file has no GT under `genotype_unknown`, apart from the
+    missed and extra calls. Phase counts only with `phased`.
     """
     called, expected = read_variants(calls), read_variants(truth)
     found = called & expected
-    result = {
+    result: dict[str, object] = {
         "truth": len(expected),
         "called": len(called),
         "found": len(found),
@@ -63,4 +123,15 @@ def compare_vcf(calls: str | Path, truth: str | Path, strict: bool = False) -> d
     }
     if strict:
         result["extra_alleles"] = _label(called - expected)
+    if genotypes:
+        called_gt, truth_gt = read_genotypes(calls), read_genotypes(truth)
+        mismatches, unknown = [], []
+        for k in sorted(found):
+            c, g = called_gt[k], truth_gt[k]
+            if c is None or g is None:
+                unknown.append(_label({k})[0])
+            elif not _same(c, g, phased):
+                mismatches.append(f"{_label({k})[0]} called {_show(c)}, truth {_show(g)}")
+        result["genotype_mismatches"] = mismatches
+        result["genotype_unknown"] = unknown
     return result

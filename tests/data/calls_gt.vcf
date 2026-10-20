@@ -1,0 +1,7 @@
+##fileformat=VCFv4.2
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+1	100	.	CCTC	CC	50	PASS	.	GT:DP	0/1:31
+1	200	.	A	G	40	PASS	.	GT:DP	0/1:28
+1	300	.	T	C	45	PASS	.	GT:DP	1|0:30

@@ -13,6 +13,7 @@ inserts around 250) drawn in those numbers. `expected.json` holds the counts and
 | `calls_padded.vcf`, `truth_three.vcf` | a deletion written with an extra trailing base, a symbolic `<*>` allele, a non-PASS call |
 | `calls_strict_pass.vcf` | every truth allele found, plus a non-PASS call missing from the truth set: passes `check-vcf --fail-on-extra` |
 | `calls_strict_extra.vcf` | every truth allele found, plus an extra allele at a true site (`1:200 A>G,T`) and a call at a new site: fails `check-vcf --fail-on-extra`, passes the default check |
+| `calls_gt.vcf`, `truth_gt.vcf` | GT in the sample column: one call with the right allele and the wrong zygosity (`1:200`, 0/1 against 1/1) and one with the same alleles in the other phase (`1:300`, 1\|0 against 0\|1): fails `check-vcf --compare-genotypes` on the first, and on both with `--phased` |
 | `quant_close.sf`, `expected_counts.json` | Salmon counts 0.4% and 0.5% off the expected values |
 | `lint_two_errors.txt` | two entries cut from the real `nextflow lint` output for CalliNGS-NF |
 | `trace_one_failed.tsv` | a Nextflow trace with one COMPLETED task and one FAILED with exit 127 |

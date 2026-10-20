@@ -67,7 +67,7 @@ rnaseq-nf: Salmon's output is never published to `--outdir`; a relative `--trans
 
 ## Known limits
 
-- `check-vcf` matches on site and allele only: it never compares genotype. By default, extra calls are counted but do not fail the check; `--fail-on-extra` (strict mode) fails it when any PASS call has an allele the truth VCF lacks and lists those alleles. Genotype is still not compared in strict mode.
+- `check-vcf` matches on site and allele. By default, extra calls are counted but do not fail the check; `--fail-on-extra` (strict mode) fails it when any PASS call has an allele the truth VCF lacks and lists those alleles. Genotype is compared only with `--compare-genotypes`, in either mode: it reads GT from the first sample column, lists each matched allele whose GT differs under `genotype_mismatches` and each match where either file has no usable GT (none, `./.`, or two records for the same allele that disagree) under `genotype_unknown`, apart from missed and extra calls, and fails the check on either. Phase is ignored unless `--phased` is added, and then compared only where both files give a phased GT. A multi-allelic record is read per allele as `bcftools norm -m -both` would split it.
 - The published image is useful only for the Python CLI: it has no Docker client and none of `conf/`, `tests/` or `scripts/`.
 
 ## Layout
