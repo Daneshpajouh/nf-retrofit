@@ -84,12 +84,21 @@ def read_variants(path: str | Path, pass_only: bool = True) -> set[Key]:
     return {key for key, _gt in _records(path, pass_only)}
 
 
+def _written_alike(a: Genotype | None, b: Genotype | None) -> bool:
+    # 0/1 and 1/0 are one unphased genotype; a phased GT keeps its order
+    if a is None or b is None:
+        return a is b
+    if a[1] != b[1]:
+        return False
+    return a[0] == b[0] if a[1] else sorted(a[0]) == sorted(b[0])
+
+
 def read_genotypes(path: str | Path, pass_only: bool = True) -> dict[Key, Genotype | None]:
     """GT per site and allele. A site and allele listed twice with different GTs gives
     None, since the file does not say which one holds."""
     genotypes: dict[Key, Genotype | None] = {}
     for key, gt in _records(path, pass_only):
-        genotypes[key] = gt if genotypes.get(key, gt) == gt else None
+        genotypes[key] = gt if key not in genotypes or _written_alike(genotypes[key], gt) else None
     return genotypes
 
 
