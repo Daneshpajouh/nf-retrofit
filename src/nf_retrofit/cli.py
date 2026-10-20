@@ -19,6 +19,13 @@ def _named_counts(arg: str) -> dict[str, int]:
     return {k: int(v) for k, v in (item.split("=") for item in arg.split(",") if item)}
 
 
+def _key_value(arg: str) -> tuple[str, str]:
+    key, sep, value = arg.partition("=")
+    if not sep or not key:
+        raise argparse.ArgumentTypeError(f"expected key=value, got {arg!r}")
+    return key, value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nf-retrofit")
     parser.add_argument("--version", action="version", version=__version__)
@@ -61,7 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--pipeline-dir", required=True, type=Path)
     p.add_argument("--container", default=None)
-    p.add_argument("--param", action="append", default=[], help="key=value, repeatable")
+    p.add_argument(
+        "--param", action="append", default=[], type=_key_value, help="key=value, repeatable"
+    )
     p.add_argument("inputs", nargs="*", help="files, globs or {a,b} patterns")
 
     p = sub.add_parser("summarise", help="write a run summary after a run")
@@ -106,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
         print(report, end="")
         return 0
     if args.command == "manifest":
-        params = dict(item.split("=", 1) for item in args.param)
+        params = dict(args.param)
         write_manifest(args.out, expand(args.inputs), params, args.pipeline_dir, args.container)
         return 0
     summary = summarise(args.trace, args.outdir, args.exit_code, args.manifest, args.out)
