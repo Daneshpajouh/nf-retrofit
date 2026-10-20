@@ -41,9 +41,16 @@ def test_quant_within_two_percent_passes_and_a_swap_fails(data_dir):
 
 def test_fastq_holds_exactly_the_requested_fragments(tmp_path):
     expected = simulate_transcripts(tmp_path, {"tx_a": 30, "tx_b": 70}, length=600)
-    with gzip.open(tmp_path / "synthetic_1.fq.gz", "rt") as fq:
-        records = sum(1 for line in fq if line.startswith("@"))
-    assert records == 100
+    names = {}
+    for mate in ("1", "2"):
+        with gzip.open(tmp_path / f"synthetic_{mate}.fq.gz", "rt") as fq:
+            lines = fq.read().splitlines()
+        names[mate] = [h[1:].rsplit("/", 1)[0] for h in lines[0::4]]
+        assert {len(seq) for seq in lines[1::4]} == {75}
+    assert names["1"] == names["2"]
+    # read names carry the transcript each fragment was drawn from
+    assert sum(".part_tx_a:" in n for n in names["1"]) == 30
+    assert sum(".part_tx_b:" in n for n in names["1"]) == 70
     assert expected["tx_b"]["tpm"] == 700000.0
 
 
