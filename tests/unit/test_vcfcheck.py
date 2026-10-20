@@ -146,6 +146,31 @@ def test_a_site_listed_twice_with_different_genotypes_is_unknown(tmp_path):
     assert result["genotype_unknown"] == ["1:100 CCT>C"]
 
 
+def test_a_site_listed_twice_with_one_unphased_genotype_in_two_orders_is_known(tmp_path):
+    # padded CCTC>CC at 0/1 and minimal CCT>C at 1/0 are one deletion with one genotype
+    calls, truth = tmp_path / "calls.vcf", tmp_path / "truth.vcf"
+    calls.write_text(
+        GT_HEADER
+        + "1\t100\t.\tCCTC\tCC\t50\tPASS\t.\tGT\t0/1\n1\t100\t.\tCCT\tC\t50\tPASS\t.\tGT\t1/0\n"
+    )
+    truth.write_text(GT_HEADER + "1\t100\t.\tCCT\tC\t.\tPASS\t.\tGT\t0/1\n")
+    result = compare_vcf(calls, truth, genotypes=True)
+    assert result["genotype_unknown"] == []
+    assert result["genotype_mismatches"] == []
+
+
+def test_a_site_listed_twice_with_one_phased_genotype_in_two_orders_is_unknown(tmp_path):
+    # 0|1 and 1|0 put the allele on different haplotypes, so the file does not say which holds
+    calls, truth = tmp_path / "calls.vcf", tmp_path / "truth.vcf"
+    calls.write_text(
+        GT_HEADER
+        + "1\t100\t.\tCCTC\tCC\t50\tPASS\t.\tGT\t0|1\n1\t100\t.\tCCT\tC\t50\tPASS\t.\tGT\t1|0\n"
+    )
+    truth.write_text(GT_HEADER + "1\t100\t.\tCCT\tC\t.\tPASS\t.\tGT\t0|1\n")
+    result = compare_vcf(calls, truth, genotypes=True, phased=True)
+    assert result["genotype_unknown"] == ["1:100 CCT>C"]
+
+
 def test_phase_is_not_compared_against_an_unphased_genotype(tmp_path):
     calls, truth = tmp_path / "calls.vcf", tmp_path / "truth.vcf"
     calls.write_text(GT_HEADER + "1\t200\t.\tA\tG\t40\tPASS\t.\tGT\t1|0\n")
