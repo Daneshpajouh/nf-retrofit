@@ -92,3 +92,22 @@ def test_missing_trace_fails_the_run_even_with_exit_zero(tmp_path):
     )
     assert summary["status"] == "FAILED"
     assert summary["trace_found"] is False
+
+
+def test_retry_goes_to_the_failed_task_when_another_shares_its_tag(tmp_path, data_dir):
+    # task 1 fails, task 2 (same tag) completes, then task 1's retry completes: nothing failed
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"started_utc": "2026-10-19T19:00:00+00:00"}\n')
+    summary = summarise(
+        data_dir / "trace_same_tag_interleaved.tsv",
+        tmp_path / "results",
+        0,
+        manifest,
+        tmp_path / "s.json",
+    )
+    assert summary["status"] == "OK"
+    assert summary["tasks"] == 2
+    assert summary["failed_tasks"] == []
+    assert summary["retried_tasks"] == [
+        {"name": "P:QUANT (s1)", "attempts": 2, "exits": ["137", "0"]}
+    ]

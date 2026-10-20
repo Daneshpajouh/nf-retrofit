@@ -108,7 +108,8 @@ def summarise(
     Nextflow writes one trace row per attempt, under the same name and a new task_id, so a
     task killed for memory and then retried has a FAILED row before its COMPLETED one.
     With the trace's `attempt` column, a first attempt always starts a new task, so two
-    tasks that share a tag stay apart; without it, rows that share a name are one task.
+    tasks that share a tag stay apart, and attempt n goes to the earliest task of that name
+    whose last row is a failed attempt n - 1; without it, rows that share a name are one task.
     Realtime and peak memory still count every attempt, since a killed attempt used them.
     A missing trace fails the run: nothing shows that any task ran.
     """
@@ -116,13 +117,27 @@ def summarise(
         list(csv.DictReader(trace.open(encoding="utf-8"), delimiter="\t")) if trace.exists() else []
     )
     tasks: list[tuple[str, list[dict[str, str]]]] = []
-    latest: dict[str, list[dict[str, str]]] = {}
     for r in sorted(rows, key=lambda r: int(r.get("task_id") or 0)):
         name = r.get("name", "")
-        if name not in latest or r.get("attempt") == "1":
-            latest[name] = []
-            tasks.append((name, latest[name]))
-        latest[name].append(r)
+        same = [a for n, a in tasks if n == name]
+        attempt = r.get("attempt")
+        if attempt is None:
+            owner = same[0] if same else None
+        elif attempt == "1" or not attempt.isdigit():
+            owner = None
+        else:
+            # the other task with this tag may have finished in between, so pick the one waiting
+            waiting = [
+                a
+                for a in same
+                if a[-1].get("attempt") == str(int(attempt) - 1)
+                and a[-1].get("status") not in ("COMPLETED", "CACHED")
+            ]
+            owner = waiting[0] if waiting else (same[-1] if same else None)
+        if owner is None:
+            owner = []
+            tasks.append((name, owner))
+        owner.append(r)
     failed = [a[-1] for _, a in tasks if a[-1].get("status") not in ("COMPLETED", "CACHED")]
     retried = [
         {"name": name, "attempts": len(a), "exits": [r.get("exit") for r in a]}

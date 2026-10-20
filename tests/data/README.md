@@ -17,4 +17,6 @@ inserts around 250) drawn in those numbers. `expected.json` holds the counts and
 | `lint_two_errors.txt` | two entries cut from the real `nextflow lint` output for CalliNGS-NF |
 | `trace_one_failed.tsv` | a Nextflow trace with one COMPLETED task and one FAILED with exit 127 |
 | `trace_retried_oom.tsv` | one task killed with exit 137, then COMPLETED on its retry |
+| `trace_same_tag.tsv` | with the `attempt` column: two first attempts under one tag (one FAILED), and a second tag retried once |
+| `trace_same_tag_interleaved.tsv` | one tag: a FAILED first attempt, a second task that completes, then the first task's retry |
 | `lint_crash.txt` | `nextflow lint` output cut off by a Java out-of-memory error |
