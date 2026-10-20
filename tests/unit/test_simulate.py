@@ -92,3 +92,17 @@ def test_contig_too_short_for_a_variant_gets_none_and_no_reads(tmp_path):
     ]
     assert records == ["chrT"] * 4
     assert "##contig=<ID=chrS,length=900>" in (tmp_path / "g" / "truth.vcf").read_text()
+
+
+def test_fragments_over_an_n_run_are_redrawn_not_dropped(tmp_path):
+    from nf_retrofit.simulate import write_pairs
+
+    rng = random.Random(9)
+    seq = "".join(rng.choice("ACGT") for _ in range(2_000))
+    seq += "N" * 600 + "".join(rng.choice("ACGT") for _ in range(2_000))
+    r1, r2 = write_pairs([(seq, 1.0)], 200, tmp_path / "n", random.Random(4), read_length=100)
+    for path in (r1, r2):
+        with gzip.open(path, "rt") as fq:
+            reads = fq.read().splitlines()[1::4]
+        assert len(reads) == 200
+        assert not any("N" in r for r in reads)

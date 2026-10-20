@@ -128,7 +128,12 @@ def write_pairs(
         gzip.open(r1_path, "wt", compresslevel=3) as r1,
         gzip.open(r2_path, "wt", compresslevel=3) as r2,
     ):
-        for n in range(n_pairs):
+        n = draws = 0
+        while n < n_pairs:
+            # a fragment over an N run is drawn again, so the files hold n_pairs pairs
+            draws += 1
+            if draws > 100 * n_pairs + 1000:
+                raise ValueError(f"{out_prefix}: too few fragments free of N for {n_pairs} pairs")
             seq = rng.choices([h for h, _ in haplotypes], weights=weights)[0]
             insert = max(read_length + 10, int(rng.gauss(insert_mean, insert_sd)))
             start = rng.randrange(0, len(seq) - insert)
@@ -142,6 +147,7 @@ def write_pairs(
             name = f"{out_prefix.name}:{n}"
             r1.write(f"@{name}/1\n{a}\n+\n{qual}\n")
             r2.write(f"@{name}/2\n{b}\n+\n{qual}\n")
+            n += 1
     return r1_path, r2_path
 
 
