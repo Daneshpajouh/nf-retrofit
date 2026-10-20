@@ -56,6 +56,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="also fail when a PASS call has an allele the truth VCF lacks",
     )
+    p.add_argument(
+        "--compare-genotypes",
+        action="store_true",
+        help="also fail when a matched allele's GT differs or is missing (phase ignored)",
+    )
+    p.add_argument(
+        "--phased", action="store_true", help="with --compare-genotypes, compare phase as well"
+    )
 
     p = sub.add_parser("lint-report", help="markdown summary of `nextflow lint` output")
     p.add_argument("lint_output", type=Path)
@@ -103,9 +111,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.command == "check-vcf":
-        result = compare_vcf(args.calls, args.truth, strict=args.fail_on_extra)
+        if args.phased and not args.compare_genotypes:
+            print("--phased needs --compare-genotypes", file=sys.stderr)
+            return 2
+        result = compare_vcf(
+            args.calls,
+            args.truth,
+            strict=args.fail_on_extra,
+            genotypes=args.compare_genotypes,
+            phased=args.phased,
+        )
         print(json.dumps(result, indent=2))
-        return 1 if result["missed"] or result.get("extra_alleles") else 0
+        failed = ("missed", "extra_alleles", "genotype_mismatches", "genotype_unknown")
+        return 1 if any(result.get(key) for key in failed) else 0
     if args.command == "lint-report":
         try:
             report = lint_file_to_markdown(args.lint_output, args.title, args.exit_code)
