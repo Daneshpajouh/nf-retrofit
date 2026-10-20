@@ -4,7 +4,7 @@ Four layers, from seconds to minutes. Numbers are from runs on 2026-10-19 on an 
 
 ## 1. Unit tests (pytest, no Nextflow)
 
-`make unit`: 31 tests in 1.14 s. They cover the kit's own code against hand-checked fixtures in `tests/data`: allele trimming before VCF comparison (`CCTC>CC` is `CCT>C`), `check-vcf` exit status with and without `--fail-on-extra`, Salmon counts within and outside a 2% tolerance, parsing real `nextflow lint` output, trace summaries with a failed task, glob and `{1,2}` expansion in the manifest, and the read simulators (seeded output is identical between runs, truth alleles match the reference, no 31-mer is shared between synthetic transcripts).
+`make unit`: 35 tests in 1.12 s. They cover the kit's own code against hand-checked fixtures in `tests/data`: allele trimming before VCF comparison (`CCTC>CC` is `CCT>C`), lowercase bases and blank lines in a VCF, `check-vcf` exit status with and without `--fail-on-extra`, Salmon counts within and outside a 2% tolerance, parsing real `nextflow lint` output, trace summaries with a failed task, glob and `{1,2}` expansion and a malformed `--param` in the manifest, and the read simulators (seeded output is identical between runs, truth alleles match the reference, a contig too short for a variant is skipped, no 31-mer is shared between synthetic transcripts).
 
 ## 2. Static checks (`nextflow lint`)
 

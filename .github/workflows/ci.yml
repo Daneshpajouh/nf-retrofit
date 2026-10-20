@@ -6,13 +6,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.13"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: pip install pytest ruff
+          python-version: ${{ matrix.python }}
+      # pinned so a new ruff release cannot change the format check under us
+      - run: pip install "pytest>=8" "ruff==0.15.22"
       - run: ruff check . && ruff format --check .
       - run: PYTHONPATH=src python -m pytest -q
 
@@ -29,7 +31,6 @@ jobs:
       - uses: nf-core/setup-nextflow@v2
         with:
           version: "26.10.2"
-      - run: pip install pytest
       - name: Lint reports match the committed ones
         run: |
           make lint-reports

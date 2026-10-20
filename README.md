@@ -20,17 +20,18 @@ Two published pipelines are the worked examples:
 
 ## Quick start
 
-Needs Python 3.11 or later.
+Needs Python 3.11 or later. CI runs the unit tests on Python 3.11 and 3.13, on Ubuntu and macOS.
 
 ```
 git clone --recurse-submodules https://github.com/Daneshpajouh/nf-retrofit.git
 cd nf-retrofit
+python3 -m venv .venv && . .venv/bin/activate
 python3 -m pip install -e '.[dev]'
 make unit
 ```
 
 ```
-31 passed in 1.14s
+35 passed in 1.12s
 ```
 
 ```
@@ -43,7 +44,7 @@ make nf-test        # needs Docker, Nextflow and nf-test
 SUCCESS: Executed 2 tests in 28.8s
 ```
 
-`make nf-test` runs the rnaseq-nf tests on this Mac. The CalliNGS-NF test needs Nextflow 22.04.5, so it runs in GitHub Actions, where the pipeline ran end to end on its bundled data and produced its VCF. It does not run on current Nextflow (see Findings below).
+`make nf-test` runs the rnaseq-nf tests; the output above is from an arm64 Mac. The CalliNGS-NF test needs Nextflow 22.04.5, so it runs in GitHub Actions, where the pipeline ran end to end on its bundled data and produced its VCF. It does not run on current Nextflow (see Findings below).
 
 A logged run of rnaseq-nf on the known-answer data:
 
