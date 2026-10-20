@@ -75,3 +75,27 @@ def test_a_set_sharing_a_31mer_on_the_other_strand_is_redrawn(tmp_path, monkeypa
     seqs = _read_fasta(tmp_path / "transcriptome.fa")
     assert seqs["tx_a"] != "A" * 600
     assert not _shared_31mers(seqs["tx_a"], seqs["tx_b"])
+
+
+def _quant(tmp_path, rows):
+    path = tmp_path / "quant.sf"
+    lines = ["Name\tLength\tEffectiveLength\tTPM\tNumReads"]
+    lines += [f"{name}\t1500\t1251.000\t0\t{reads}" for name, reads in rows]
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+def test_nan_count_fails(tmp_path, data_dir):
+    expected = json.loads((data_dir / "expected_counts.json").read_text())
+    quant = _quant(tmp_path, [("tx_a", "nan"), ("tx_b", 800), ("tx_c", 1600), ("tx_d", 1200)])
+    assert compare_quant(quant, expected) == ["tx_a: NumReads nan is not a count"]
+
+
+def test_duplicate_and_unexpected_transcripts_fail(tmp_path, data_dir):
+    expected = json.loads((data_dir / "expected_counts.json").read_text())
+    rows = [("tx_a", 9), ("tx_a", 400), ("tx_b", 800), ("tx_c", 1600), ("tx_d", 1200)]
+    quant = _quant(tmp_path, [*rows, ("tx_x", 0)])
+    assert compare_quant(quant, expected) == [
+        "tx_a: listed twice in quant.sf",
+        "tx_x: in quant.sf but not in the expected counts",
+    ]

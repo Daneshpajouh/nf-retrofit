@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import random
 from pathlib import Path
 
@@ -79,16 +80,30 @@ def _concat(parts: list[Path], target: Path) -> None:
 def compare_quant(
     quant_sf: str | Path, expected: dict[str, dict[str, float]], tolerance: float = 0.02
 ) -> list[str]:
-    """Return one line per transcript whose NumReads is off by more than `tolerance` (relative)."""
-    with Path(quant_sf).open(encoding="utf-8") as handle:
-        rows = {r["Name"]: r for r in csv.DictReader(handle, delimiter="\t")}
+    """Return one line per transcript whose NumReads is off by more than `tolerance` (relative).
+
+    A transcript listed twice, one missing from either side, or a count that is not a finite
+    non-negative number is a problem too: NaN compares false with everything and would pass.
+    """
     problems = []
+    rows: dict[str, dict[str, str]] = {}
+    with Path(quant_sf).open(encoding="utf-8") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            if row["Name"] in rows:
+                problems.append(f"{row['Name']}: listed twice in quant.sf")
+            rows[row["Name"]] = row
     for name, exp in expected.items():
         if name not in rows:
             problems.append(f"{name}: missing from quant.sf")
             continue
         got = float(rows[name]["NumReads"])
         want = exp["num_reads"]
-        if abs(got - want) > tolerance * want:
+        if not math.isfinite(got) or got < 0:
+            problems.append(f"{name}: NumReads {rows[name]['NumReads']} is not a count")
+        elif abs(got - want) > tolerance * want:
             problems.append(f"{name}: NumReads {got:.1f}, expected {want}")
+    problems += [
+        f"{name}: in quant.sf but not in the expected counts"
+        for name in sorted(rows.keys() - expected.keys())
+    ]
     return problems
