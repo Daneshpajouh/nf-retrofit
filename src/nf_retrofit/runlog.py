@@ -107,24 +107,30 @@ def summarise(
 
     Nextflow writes one trace row per attempt, under the same name and a new task_id, so a
     task killed for memory and then retried has a FAILED row before its COMPLETED one.
+    With the trace's `attempt` column, a first attempt always starts a new task, so two
+    tasks that share a tag stay apart; without it, rows that share a name are one task.
     Realtime and peak memory still count every attempt, since a killed attempt used them.
+    A missing trace fails the run: nothing shows that any task ran.
     """
     rows = (
         list(csv.DictReader(trace.open(encoding="utf-8"), delimiter="\t")) if trace.exists() else []
     )
-    attempts: dict[str, list[dict[str, str]]] = {}
+    tasks: list[tuple[str, list[dict[str, str]]]] = []
+    latest: dict[str, list[dict[str, str]]] = {}
     for r in sorted(rows, key=lambda r: int(r.get("task_id") or 0)):
-        attempts.setdefault(r.get("name", ""), []).append(r)
-    failed = [
-        a[-1] for a in attempts.values() if a[-1].get("status") not in ("COMPLETED", "CACHED")
-    ]
+        name = r.get("name", "")
+        if name not in latest or r.get("attempt") == "1":
+            latest[name] = []
+            tasks.append((name, latest[name]))
+        latest[name].append(r)
+    failed = [a[-1] for _, a in tasks if a[-1].get("status") not in ("COMPLETED", "CACHED")]
     retried = [
         {"name": name, "attempts": len(a), "exits": [r.get("exit") for r in a]}
-        for name, a in attempts.items()
+        for name, a in tasks
         if len(a) > 1
     ]
     processes: dict[str, dict[str, object]] = {}
-    for task_name, task_attempts in attempts.items():
+    for task_name, task_attempts in tasks:
         name = task_name.split(" (")[0]
         entry = processes.setdefault(
             name, {"tasks": 0, "realtime_ms": 0.0, "peak_rss": [], "statuses": set()}
@@ -149,12 +155,13 @@ def summarise(
     finished = datetime.now(UTC)
     outputs = sorted(p for p in out_dir.rglob("*") if p.is_file()) if out_dir.exists() else []
     summary = {
-        "status": "OK" if exit_code == 0 and not failed else "FAILED",
+        "status": "OK" if exit_code == 0 and not failed and trace.exists() else "FAILED",
         "exit_code": exit_code,
+        "trace_found": trace.exists(),
         "started_utc": started,
         "finished_utc": finished.isoformat(timespec="seconds"),
         "duration_s": round((finished - datetime.fromisoformat(started)).total_seconds(), 1),
-        "tasks": len(attempts),
+        "tasks": len(tasks),
         "failed_tasks": [
             {"name": r.get("name"), "status": r.get("status"), "exit": r.get("exit")}
             for r in failed

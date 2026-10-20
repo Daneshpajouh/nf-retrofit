@@ -30,6 +30,7 @@ nextflow -log "$run_dir/nextflow.log" run "$pipeline" \
     -with-trace "$run_dir/trace.tsv" \
     -with-report "$run_dir/report.html" \
     -with-timeline "$run_dir/timeline.html" \
+    -c "$here/conf/trace.config" \
     "--$outdir_param" "$run_dir/results" "$@" 2>&1 | tee "$run_dir/console.txt"
 status=${PIPESTATUS[0]}
 set -e

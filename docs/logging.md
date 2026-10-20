@@ -4,12 +4,12 @@
 
 | File | Written | Content |
 |---|---|---|
-| `manifest.json` | before the run | start time (UTC), host, Nextflow version, pipeline directory and git commit, container, arguments, every input file with size and SHA-256 |
+| `manifest.json` | before the run | start time (UTC), host, Nextflow version, pipeline directory and git commit, the `PIPELINE_CONTAINER` override if set (otherwise "from the pipeline config"), arguments, every input file with size and SHA-256 |
 | `nextflow.log`, `console.txt` | during | Nextflow's own log and the console output |
-| `trace.tsv`, `report.html`, `timeline.html` | during | per-task status, exit code, times, CPU and peak memory |
+| `trace.tsv`, `report.html`, `timeline.html` | during | per-task status, exit code, attempt, container image, times, CPU and peak memory |
 | `summary.json` | after | status, exit code, duration, failed and retried tasks, a per-process resource table, every output file with size and SHA-256 |
 
-Arguments that name files, globs or `{1,2}` pairs are expanded and hashed, so the manifest records the read files behind `--reads 'sample_{1,2}.fq.gz'`. Set `OUTDIR_PARAM` when the pipeline's output parameter is not `outdir` (CalliNGS-NF uses `results`). The summary's status is `FAILED` if Nextflow exits non-zero or the last attempt of any task ended other than COMPLETED or CACHED. A task that succeeds on retry counts once and is listed under `retried_tasks` with the exit code of each attempt.
+Arguments that name files, globs or `{1,2}` pairs are expanded and hashed, so the manifest records the read files behind `--reads 'sample_{1,2}.fq.gz'`. Set `OUTDIR_PARAM` when the pipeline's output parameter is not `outdir` (CalliNGS-NF uses `results`). The summary's status is `FAILED` if Nextflow exits non-zero or the last attempt of any task ended other than COMPLETED or CACHED. A task that succeeds on retry counts once and is listed under `retried_tasks` with the exit code of each attempt. The wrapper passes `conf/trace.config`, which adds the `attempt` and `container` columns to the trace; with `attempt`, two tasks that share a tag are counted as two, not as one retried task. A trace written without that column falls back to grouping by name. A missing trace makes the status `FAILED`.
 
 ## Example: rnaseq-nf on the known-answer data
 

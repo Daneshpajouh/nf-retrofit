@@ -67,3 +67,28 @@ def test_read_pair_glob_expands_to_both_files(tmp_path):
         (tmp_path / name).write_text("@r\nA\n+\nI\n")
     found = expand([str(tmp_path / "s1_{1,2}.fq.gz"), str(tmp_path / "missing.fa"), "results"])
     assert [p.name for p in found] == ["s1_1.fq.gz", "s1_2.fq.gz"]
+
+
+def test_two_tasks_sharing_a_tag_are_not_taken_for_a_retry(tmp_path, data_dir):
+    # with the attempt column, s1 is two first attempts (one failed), s2 one task retried once
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"started_utc": "2026-10-19T19:00:00+00:00"}\n')
+    summary = summarise(
+        data_dir / "trace_same_tag.tsv", tmp_path / "results", 0, manifest, tmp_path / "s.json"
+    )
+    assert summary["status"] == "FAILED"
+    assert summary["tasks"] == 3
+    assert summary["failed_tasks"] == [{"name": "P:QUANT (s1)", "status": "FAILED", "exit": "1"}]
+    assert summary["retried_tasks"] == [
+        {"name": "P:QUANT (s2)", "attempts": 2, "exits": ["137", "0"]}
+    ]
+
+
+def test_missing_trace_fails_the_run_even_with_exit_zero(tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"started_utc": "2026-10-19T19:00:00+00:00"}\n')
+    summary = summarise(
+        tmp_path / "trace.tsv", tmp_path / "results", 0, manifest, tmp_path / "s.json"
+    )
+    assert summary["status"] == "FAILED"
+    assert summary["trace_found"] is False
