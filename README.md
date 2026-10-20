@@ -33,7 +33,7 @@ make unit
 ```
 
 ```
-35 passed in 1.12s
+40 passed in 1.40s
 ```
 
 ```
