@@ -8,7 +8,7 @@ Four layers, from seconds to minutes. Numbers are from runs on 2026-10-19 on an 
 
 ## 2. Static checks (`nextflow lint`)
 
-`make lint-reports` writes `docs/lint/<pipeline>.txt` (raw) and `.md` (counted). Nextflow 26.10.2 found nothing in rnaseq-nf v2.4 and 3 errors and 5 warnings in CalliNGS-NF; CI regenerates the reports and fails if they change, so a new Nextflow release that rejects more code shows up as a diff.
+`make lint-reports` writes `docs/lint/<pipeline>.txt` (raw) and `.md` (counted). Nextflow 26.10.2 found nothing in rnaseq-nf v2.4 and 3 errors and 5 warnings in CalliNGS-NF; CI regenerates the reports with the pinned 26.10.2 and fails if they change; moving the pin to a newer release shows what that release rejects as a diff.
 
 ## 3. Known-answer pipeline tests (nf-test)
 
@@ -23,7 +23,7 @@ SUCCESS: Executed 2 tests in 28.8s
 
 Salmon returned 400, 800, 1,600 and 1,200 reads, the drawn numbers exactly, with a 100% mapping rate. The test reads `quant.sf` from the task directory because rnaseq-nf does not publish it.
 
-For variant callers, `nf-retrofit germline` writes paired reads from any reference with a known set of heterozygous and homozygous SNVs and a truth VCF, and `nf-retrofit check-vcf calls.vcf truth.vcf` compares the PASS calls after trimming padded alleles. Trimming does not left-align an indel in a repeat, so normalise both VCFs first with `bcftools norm -f ref.fa -m -both`.
+For variant callers, `nf-retrofit germline` writes paired reads from a FASTA reference (contigs of 1,000 bases or fewer get no variants and no reads) with a known set of heterozygous and homozygous SNVs and a truth VCF, and `nf-retrofit check-vcf calls.vcf truth.vcf` compares the PASS calls after trimming padded alleles. Trimming does not left-align an indel in a repeat, so normalise both VCFs first with `bcftools norm -f ref.fa -m -both`.
 
 By default `check-vcf` fails only when a truth allele is missed; extra calls are counted (`extra`) but pass. Strict mode, `check-vcf --fail-on-extra calls.vcf truth.vcf`, also fails when any PASS call carries an allele the truth VCF lacks, whether at a true site (`1:200 A>G,T` against a truth of `A>G`) or at a new one, and lists each one under `extra_alleles`. Both modes compare only calls whose FILTER is `PASS` or `.`, and skip the `*`, `<*>` and `<NON_REF>` alleles. Neither compares genotype: a heterozygous call of a homozygous truth variant still matches.
 

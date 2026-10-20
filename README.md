@@ -9,6 +9,8 @@ Two published pipelines are the worked examples:
 | [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) | tag v2.4, bad0c70 | Apache-2.0 | the Nextflow project's own RNA-seq example (FastQC, Salmon, MultiQC), copied into many tutorials; CI only checks that a run exits 0 |
 | [CRG-CNAG/CalliNGS-NF](https://github.com/CRG-CNAG/CalliNGS-NF) | master, 9e7ebf0 (2021-08-25) | MPL-2.0 | GATK RNA-seq variant calling, one of the example pipelines in the 2017 Nextflow paper (Di Tommaso et al., Nature Biotechnology 35:316); one end-to-end CI run, no other tests. Its only tag, v1.0.0, is DSL1 and cannot run on any Nextflow from 22.12 on |
 
+On the known-answer set (4,000 read pairs from four synthetic transcripts with no shared 31-mer), Salmon in rnaseq-nf returned 400, 800, 1,600 and 1,200 reads, the numbers drawn, with a 100% mapping rate. The pipeline's own CI checks only that the run exits 0.
+
 ## What it adds
 
 - `conf/test.config` and `conf/slurm.config`: overlays applied with `-c`. The test overlay caps each task at one CPU and 2 GB, turns on `pipefail` in task shells and pulls amd64 images on arm64 hosts. The Slurm overlay turns queue, account, wall time and resource caps into parameters.

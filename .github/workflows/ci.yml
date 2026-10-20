@@ -14,9 +14,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       # pinned so a new ruff release cannot change the format check under us
-      - run: pip install "pytest>=8" "ruff==0.15.22"
+      - run: pip install . "pytest>=8" "ruff==0.15.22"
       - run: ruff check . && ruff format --check .
-      - run: PYTHONPATH=src python -m pytest -q
+      # the installed package, not src/, so broken packaging or a missing entry point fails here
+      - run: nf-retrofit --version
+      - run: python -m pytest -q
 
   lint:
     runs-on: ubuntu-latest
